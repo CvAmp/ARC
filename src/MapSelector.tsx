@@ -376,7 +376,7 @@ const MapSelector: React.FC = () => {
               onMouseEnter={(e) => e.currentTarget.style.background = '#5a6268'}
               onMouseLeave={(e) => e.currentTarget.style.background = '#6c757d'}
             >
-              Copy Data
+              Copy JSON Data
             </button>
             
             <button
@@ -433,7 +433,7 @@ const MapSelector: React.FC = () => {
               onMouseEnter={(e) => e.currentTarget.style.background = '#1ba085'}
               onMouseLeave={(e) => e.currentTarget.style.background = '#20c997'}
             >
-              Paste Data
+              Paste JSON Data
             </button>
           </div>
         </div>
