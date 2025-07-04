@@ -89,6 +89,17 @@ const MapSelector: React.FC = () => {
   const [tileColors, setTileColors] = useState<{ [id: number]: string }>({});
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[2]);
 
+  // Calculate color counts
+  const colorCounts = COLORS.reduce((acc, color) => {
+    acc[color] = Object.values(tileColors).filter(tileColor => tileColor === color).length;
+    return acc;
+  }, {} as { [color: string]: number });
+
+  // Reset all selections
+  const resetSelections = () => {
+    setTileColors({});
+  };
+
   // Handler to set color for a tile (multi-color selection)
   const handleTileClick = (id: number) => {
     setTileColors((prev) => {
@@ -110,7 +121,7 @@ const MapSelector: React.FC = () => {
     <div style={{ height: '100vh', width: '100vw', margin: 0, padding: 0, overflow: 'hidden', position: 'fixed', top: 0, left: 0, background: '#23272f' }}>
       <div style={{
         margin: 0,
-        padding: '8px 0 0 0',
+        padding: '8px 16px',
         display: 'flex',
         alignItems: 'center',
         flexWrap: 'wrap',
@@ -122,8 +133,88 @@ const MapSelector: React.FC = () => {
         background: 'rgba(35,39,47,0.97)',
         boxShadow: '0 2px 8px 0 rgba(0,0,0,0.10)'
       }}>
-        <span style={{ marginLeft: 16, marginRight: 12, fontWeight: 500, color: '#fff' }}>Select color:</span>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 16, width: '100%' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <span style={{ fontWeight: 500, color: '#fff' }}>Select color:</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {COLORS.map((color) => (
+                <div key={color} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                  <button
+                    style={{
+                      background: color,
+                      border: selectedColor === color ? "2.5px solid #fff" : "1px solid #888",
+                      width: 32,
+                      height: 32,
+                      borderRadius: '50%',
+                      margin: 0,
+                      cursor: "pointer",
+                      outline: 'none',
+                      boxShadow: selectedColor === color ? '0 0 6px #fff' : undefined,
+                      transition: 'border 0.2s, box-shadow 0.2s',
+                    }}
+                    aria-label={color}
+                    onClick={() => setSelectedColor(color)}
+                  />
+                  {colorCounts[color] > 0 && (
+                    <span style={{ 
+                      fontSize: '10px', 
+                      color: '#fff', 
+                      fontWeight: 'bold',
+                      background: 'rgba(0,0,0,0.6)',
+                      padding: '1px 4px',
+                      borderRadius: '8px',
+                      minWidth: '16px',
+                      textAlign: 'center'
+                    }}>
+                      {colorCounts[color]}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          <button
+            onClick={resetSelections}
+            style={{
+              background: '#dc3545',
+              color: '#fff',
+              border: 'none',
+              padding: '6px 12px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 500,
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#c82333'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#dc3545'}
+          >
+            Reset All
+          </button>
+        </div>
+      </div>
+      <div style={{
+        position: 'absolute',
+        top: 72,
+        left: 0,
+        width: '100vw',
+        height: 'calc(100vh - 72px)',
+        zIndex: 1,
+        background: '#23272f',
+      }}>
+        <ZoomablePanSvgMap
+          selectedTiles={selectedTiles}
+          selectedColor={selectedColor}
+          tileColors={tileColors}
+          onTileClick={handleTileClick}
+        />
+      </div>
+    </div>
+  );
+};
+
+export default MapSelector;
           {COLORS.map((color) => (
             <button
               key={color}
@@ -144,22 +235,6 @@ const MapSelector: React.FC = () => {
             />
           ))}
         </div>
-      </div>
-      <div style={{
-        position: 'absolute',
-        top: 56,
-        left: 0,
-        width: '100vw',
-        height: 'calc(100vh - 56px)',
-        zIndex: 1,
-        background: '#23272f',
-      }}>
-        <ZoomablePanSvgMap
-          selectedTiles={selectedTiles}
-          selectedColor={selectedColor}
-          tileColors={tileColors}
-          onTileClick={handleTileClick}
-        />
       </div>
     </div>
   );
