@@ -361,25 +361,6 @@ const MapSelector: React.FC = () => {
             </button>
             
             <button
-              onClick={copySelectionData}
-              style={{
-                background: '#6c757d',
-                color: '#fff',
-                border: 'none',
-                padding: '6px 12px',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 500,
-                transition: 'background 0.2s',
-              }}
-              onMouseEnter={(e) => e.currentTarget.style.background = '#5a6268'}
-              onMouseLeave={(e) => e.currentTarget.style.background = '#6c757d'}
-            >
-              Copy JSON Data
-            </button>
-            
-            <button
               onClick={saveSelectionData}
               style={{
                 background: '#6f42c1',
@@ -415,6 +396,25 @@ const MapSelector: React.FC = () => {
               onMouseLeave={(e) => e.currentTarget.style.background = '#fd7e14'}
             >
               Load Data
+            </button>
+            
+            <button
+              onClick={copySelectionData}
+              style={{
+                background: '#6c757d',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#5a6268'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#6c757d'}
+            >
+              Copy JSON Data
             </button>
             
             <button
