@@ -151,187 +151,175 @@ const MapSelector: React.FC = () => {
 
   // Export functionality
   const exportAsImage = async (format: 'png' | 'jpg' = 'png') => {
-    const mapContainer = document.querySelector('[data-export-target]') as HTMLElement;
-    if (!mapContainer) {
-      alert('Map not found for export');
-      return;
-    }
+    try {
+      // Show loading message
+      const originalText = document.querySelector('[data-export-button]')?.textContent;
+      const button = document.querySelector('[data-export-button]') as HTMLButtonElement;
+      if (button) button.textContent = 'Generating...';
 
-    // Create a temporary container with map and legend
-    const exportContainer = document.createElement('div');
-    exportContainer.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 1200px;
-      height: auto;
-      background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
-      font-family: system-ui, Arial, sans-serif;
-      z-index: 10000;
-      pointer-events: none;
-      visibility: hidden;
-    `;
-
-    // Clone the map container
-    const mapClone = mapContainer.cloneNode(true) as HTMLElement;
-    mapClone.style.cssText = `
-      width: 1200px;
-      height: 800px;
-      margin: 0;
-      border: none;
-      display: block;
-      background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
-    `;
-
-    // Create legend
-    const legend = document.createElement('div');
-    legend.style.cssText = `
-      padding: 20px;
-      background: ${format === 'jpg' ? '#ffffff' : '#ffffff'};
-      border: 2px solid #333333;
-      display: block;
-      width: 1200px;
-      box-sizing: border-box;
-      margin: 0;
-    `;
-
-    // Add title to legend
-    const legendTitle = document.createElement('div');
-    legendTitle.textContent = 'Color Selection Legend';
-    legendTitle.style.cssText = `
-      text-align: center;
-      font-size: 24px;
-      font-weight: bold;
-      color: #333333;
-      margin-bottom: 15px;
-      font-family: Arial, sans-serif;
-    `;
-    legend.appendChild(legendTitle);
-
-    // Create color palette container (matching the toolbar design)
-    const colorPalette = document.createElement('div');
-    colorPalette.style.cssText = `
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: nowrap;
-      overflow-x: auto;
-      margin-bottom: 15px;
-    `;
-
-    // Add all colors with their counts (just like in the toolbar)
-    COLORS.forEach((color) => {
-      const colorContainer = document.createElement('div');
-      colorContainer.style.cssText = `
+      // Create a full-screen overlay for export
+      const overlay = document.createElement('div');
+      overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: ${format === 'jpg' ? '#ffffff' : '#ffffff'};
+        z-index: 999999;
         display: flex;
         flex-direction: column;
-        flex-shrink: 0;
-        align-items: center;
-        gap: 4px;
+        font-family: system-ui, Arial, sans-serif;
       `;
 
-      // Color circle (matching the toolbar design)
-      const colorCircle = document.createElement('div');
-      colorCircle.style.cssText = `
-        width: 32px;
-        height: 32px;
-        background: ${color};
-        border: ${colorCounts[color] > 0 ? '3px solid #333333' : '2px solid #888888'};
-        border-radius: 50%;
-        box-shadow: ${colorCounts[color] > 0 ? '0 0 6px rgba(0,0,0,0.4)' : 'none'};
-      `;
-
-      // Count label (matching the toolbar design)
-      const countLabel = document.createElement('div');
-      if (colorCounts[color] > 0) {
-        countLabel.textContent = colorCounts[color].toString();
-        countLabel.style.cssText = `
-          font-size: 12px;
-          color: #333333;
-          font-weight: bold;
-          background: #ffffff;
-          padding: 2px 6px;
-          border-radius: 8px;
-          border: 1px solid #333333;
-          min-width: 16px;
-          text-align: center;
-          font-family: Arial, sans-serif;
-        `;
-      } else {
-        countLabel.textContent = '0';
-        countLabel.style.cssText = `
-          font-size: 12px;
-          color: #999999;
-          font-weight: normal;
-          background: #f0f0f0;
-          padding: 2px 6px;
-          border-radius: 8px;
-          border: 1px solid #cccccc;
-          min-width: 16px;
-          text-align: center;
-          font-family: Arial, sans-serif;
-        `;
+      // Get the current map container
+      const mapContainer = document.querySelector('[data-export-target]') as HTMLElement;
+      if (!mapContainer) {
+        alert('Map not found for export');
+        return;
       }
 
-      colorContainer.appendChild(colorCircle);
-      colorContainer.appendChild(countLabel);
-      colorPalette.appendChild(colorContainer);
-    });
+      // Create map section (80% of height)
+      const mapSection = document.createElement('div');
+      mapSection.style.cssText = `
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
+        padding: 20px;
+        box-sizing: border-box;
+      `;
 
-    legend.appendChild(colorPalette);
+      // Clone and style the map
+      const mapClone = mapContainer.cloneNode(true) as HTMLElement;
+      mapClone.style.cssText = `
+        width: 90%;
+        height: 90%;
+        max-width: 1000px;
+        max-height: 700px;
+        border: 2px solid #333;
+        border-radius: 8px;
+        background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
+      `;
+      mapSection.appendChild(mapClone);
 
-    // Add total count
-    const totalSelected = Object.keys(tileColors).length;
-    const totalItem = document.createElement('div');
-    totalItem.style.cssText = `
-      text-align: center;
-      font-weight: bold;
-      font-size: 18px;
-      color: #333333;
-      margin-bottom: 10px;
-      padding: 8px;
-      background: #f8f9fa;
-      border-radius: 6px;
-      border: 1px solid #333333;
-      font-family: Arial, sans-serif;
-    `;
-    totalItem.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
-    legend.appendChild(totalItem);
+      // Create legend section (20% of height)
+      const legendSection = document.createElement('div');
+      legendSection.style.cssText = `
+        height: 200px;
+        background: #ffffff;
+        border-top: 3px solid #333333;
+        padding: 20px;
+        box-sizing: border-box;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+      `;
 
-    // Add timestamp
-    const timestamp = document.createElement('div');
-    timestamp.textContent = `Generated: ${new Date().toLocaleString()}`;
-    timestamp.style.cssText = `
-      text-align: center;
-      font-size: 14px;
-      color: #666666;
-      font-weight: 500;
-      font-family: Arial, sans-serif;
-    `;
-    legend.appendChild(timestamp);
+      // Legend title
+      const legendTitle = document.createElement('div');
+      legendTitle.textContent = 'Color Selection Legend';
+      legendTitle.style.cssText = `
+        text-align: center;
+        font-size: 24px;
+        font-weight: bold;
+        color: #333333;
+        margin-bottom: 15px;
+      `;
+      legendSection.appendChild(legendTitle);
 
-    // Assemble export container
-    exportContainer.appendChild(mapClone);
-    exportContainer.appendChild(legend);
-    document.body.appendChild(exportContainer);
-    
-    // Make visible for rendering and force layout
-    exportContainer.style.visibility = 'visible';
-    exportContainer.style.position = 'absolute';
-    exportContainer.style.top = '0px';
-    exportContainer.style.left = '0px';
-    
-    await new Promise(resolve => setTimeout(resolve, 100)); // Give time for rendering
-    
-    try {
-      const canvas = await html2canvas(exportContainer, {
+      // Color palette (horizontal layout)
+      const colorPalette = document.createElement('div');
+      colorPalette.style.cssText = `
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+      `;
+
+      COLORS.forEach((color) => {
+        const colorItem = document.createElement('div');
+        colorItem.style.cssText = `
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 5px;
+        `;
+
+        const colorCircle = document.createElement('div');
+        colorCircle.style.cssText = `
+          width: 30px;
+          height: 30px;
+          background: ${color};
+          border: ${colorCounts[color] > 0 ? '3px solid #000000' : '2px solid #888888'};
+          border-radius: 50%;
+          box-shadow: ${colorCounts[color] > 0 ? '0 2px 4px rgba(0,0,0,0.3)' : 'none'};
+        `;
+
+        const countText = document.createElement('div');
+        countText.textContent = colorCounts[color].toString();
+        countText.style.cssText = `
+          font-size: 14px;
+          font-weight: ${colorCounts[color] > 0 ? 'bold' : 'normal'};
+          color: ${colorCounts[color] > 0 ? '#000000' : '#888888'};
+          background: ${colorCounts[color] > 0 ? '#ffffff' : '#f5f5f5'};
+          border: 1px solid ${colorCounts[color] > 0 ? '#000000' : '#cccccc'};
+          border-radius: 4px;
+          padding: 2px 6px;
+          min-width: 20px;
+          text-align: center;
+        `;
+
+        colorItem.appendChild(colorCircle);
+        colorItem.appendChild(countText);
+        colorPalette.appendChild(colorItem);
+      });
+
+      legendSection.appendChild(colorPalette);
+
+      // Summary info
+      const summaryInfo = document.createElement('div');
+      summaryInfo.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 16px;
+        color: #333333;
+        font-weight: 500;
+      `;
+
+      const totalSelected = Object.keys(tileColors).length;
+      const totalText = document.createElement('div');
+      totalText.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
+      totalText.style.fontWeight = 'bold';
+
+      const timestampText = document.createElement('div');
+      timestampText.textContent = `Generated: ${new Date().toLocaleString()}`;
+      timestampText.style.color = '#666666';
+
+      summaryInfo.appendChild(totalText);
+      summaryInfo.appendChild(timestampText);
+      legendSection.appendChild(summaryInfo);
+
+      // Assemble overlay
+      overlay.appendChild(mapSection);
+      overlay.appendChild(legendSection);
+      document.body.appendChild(overlay);
+
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Capture the overlay
+      const canvas = await html2canvas(overlay, {
         backgroundColor: format === 'jpg' ? '#ffffff' : null,
-        scale: 2, // Higher resolution
+        scale: 1.5,
         useCORS: true,
         allowTaint: true,
-        width: 1200,
-        removeContainer: false,
+        width: window.innerWidth,
+        height: window.innerHeight,
       });
 
       // Create download link
@@ -341,12 +329,14 @@ const MapSelector: React.FC = () => {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+
+      // Clean up
+      document.body.removeChild(overlay);
+      if (button && originalText) button.textContent = originalText;
+      
     } catch (error) {
       console.error('Export failed:', error);
       alert('Failed to export image. Please try again.');
-    } finally {
-      // Clean up temporary container
-      document.body.removeChild(exportContainer);
     }
   };
 
@@ -545,6 +535,7 @@ const MapSelector: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => exportAsImage('png')}
+              data-export-button
               style={{
                 background: '#28a745',
                 color: '#fff',
@@ -564,6 +555,7 @@ const MapSelector: React.FC = () => {
             
             <button
               onClick={() => exportAsImage('jpg')}
+              data-export-button
               style={{
                 background: '#17a2b8',
                 color: '#fff',
