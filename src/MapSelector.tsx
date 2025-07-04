@@ -146,6 +146,88 @@ const MapSelector: React.FC = () => {
     }
   };
 
+  // Import selection data from JSON
+  const importSelectionData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const data = JSON.parse(event.target?.result as string);
+          if (data.tiles && typeof data.tiles === 'object') {
+            // Convert string keys back to numbers and validate colors
+            const validTiles: { [id: number]: string } = {};
+            Object.entries(data.tiles).forEach(([key, color]) => {
+              const tileId = parseInt(key);
+              if (!isNaN(tileId) && typeof color === 'string' && COLORS.includes(color)) {
+                validTiles[tileId] = color;
+              }
+            });
+            setTileColors(validTiles);
+            alert(`Successfully imported ${Object.keys(validTiles).length} tile selections!`);
+          } else {
+            alert('Invalid file format. Please select a valid selection data file.');
+          }
+        } catch (error) {
+          console.error('Import failed:', error);
+          alert('Failed to import selection data. Please check the file format.');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
+  // Import from clipboard
+  const importFromClipboard = async () => {
+    try {
+      const clipboardText = await navigator.clipboard.readText();
+      const data = JSON.parse(clipboardText);
+      
+      if (data.tiles && typeof data.tiles === 'object') {
+        // Convert string keys back to numbers and validate colors
+        const validTiles: { [id: number]: string } = {};
+        Object.entries(data.tiles).forEach(([key, color]) => {
+          const tileId = parseInt(key);
+          if (!isNaN(tileId) && typeof color === 'string' && COLORS.includes(color)) {
+            validTiles[tileId] = color;
+          }
+        });
+        setTileColors(validTiles);
+        alert(`Successfully imported ${Object.keys(validTiles).length} tile selections from clipboard!`);
+      } else {
+        alert('Invalid clipboard data. Please copy valid selection data first.');
+      }
+    } catch (error) {
+      console.error('Clipboard import failed:', error);
+      alert('Failed to import from clipboard. Please check the data format.');
+    }
+  };
+
+  // Save selection data as JSON file
+  const saveSelectionData = () => {
+    const selectionData = {
+      tiles: tileColors,
+      timestamp: new Date().toISOString(),
+      totalTiles: Object.keys(tileColors).length,
+      version: '1.0'
+    };
+    
+    const blob = new Blob([JSON.stringify(selectionData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `map-selection-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
   // Handler to set color for a tile (multi-color selection)
   const handleTileClick = (id: number) => {
     setTileColors((prev) => {
@@ -295,6 +377,63 @@ const MapSelector: React.FC = () => {
               onMouseLeave={(e) => e.currentTarget.style.background = '#6c757d'}
             >
               Copy Data
+            </button>
+            
+            <button
+              onClick={saveSelectionData}
+              style={{
+                background: '#6f42c1',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#5a32a3'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#6f42c1'}
+            >
+              Save Data
+            </button>
+            
+            <button
+              onClick={importSelectionData}
+              style={{
+                background: '#fd7e14',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#e8590c'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#fd7e14'}
+            >
+              Load Data
+            </button>
+            
+            <button
+              onClick={importFromClipboard}
+              style={{
+                background: '#20c997',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#1ba085'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#20c997'}
+            >
+              Paste Data
             </button>
           </div>
         </div>
