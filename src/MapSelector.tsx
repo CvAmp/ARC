@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import SvgMap from "./SvgMap";
+
 // --- Zoomable/Pannable SVG Map Wrapper ---
 const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props) => {
   // Responsive SVG sizing: fill parent, viewBox always [0,0,1600,1600]
@@ -8,7 +9,6 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
   // Optionally, you could allow initial zoom to fit parent, but for now always show full map
-
 
   // Mouse/touch pan handlers
   const onMouseDown = (e: React.MouseEvent) => {
@@ -82,7 +82,6 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
 const COLORS = [
   "#e0e0e0", "#c0c0c0", "#a0e0a0", "#f0b0b0", "#b0b0f0", "#ffe066", "#ff8c42", "#6ec6ff", "#ff6f91", "#7fffd4", "#bada55", "#8d5524"
 ];
-
 
 const MapSelector: React.FC = () => {
   // tileColors: { [tileId: number]: color }
