@@ -9,16 +9,6 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
   const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 1600, 1600]);
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
-  // Convert screen coordinates to SVG coordinates
-  const screenToSvg = (clientX: number, clientY: number) => {
-    if (!svgRef.current) return { x: 0, y: 0 };
-    
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = ((clientX - rect.left) / rect.width) * viewBox[2] + viewBox[0];
-    const y = ((clientY - rect.top) / rect.height) * viewBox[3] + viewBox[1];
-    return { x, y };
-  };
-
   // Mouse/touch pan handlers
   const onMouseDown = (e: React.MouseEvent) => {
     if (svgRef.current) {
