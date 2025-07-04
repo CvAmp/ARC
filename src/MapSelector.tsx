@@ -215,29 +215,3 @@ const MapSelector: React.FC = () => {
 };
 
 export default MapSelector;
-          {COLORS.map((color) => (
-            <button
-              key={color}
-              style={{
-                background: color,
-                border: selectedColor === color ? "2.5px solid #fff" : "1px solid #888",
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                margin: 0,
-                cursor: "pointer",
-                outline: 'none',
-                boxShadow: selectedColor === color ? '0 0 6px #fff' : undefined,
-                transition: 'border 0.2s, box-shadow 0.2s',
-              }}
-              aria-label={color}
-              onClick={() => setSelectedColor(color)}
-            />
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default MapSelector;
