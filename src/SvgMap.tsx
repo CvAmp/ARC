@@ -3,6 +3,7 @@ import React from 'react';
 type SvgMapProps = {
   selectedTiles: number[];
   selectedColor: string;
+  tileColors: { [id: number]: string };
   onTileClick: (id: number) => void;
 };
 
@@ -240,19 +241,25 @@ const tilePaths = [
   },
 ];
 
-const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, selectedColor, onTileClick }) => (
+const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, /*selectedColor,*/ tileColors, onTileClick }) => (
   <svg viewBox="0 0 1600 1600">
-    {tilePaths.map((tile) => (
-      <path
-        key={tile.id}
-        d={tile.d}
-        fill={selectedTiles.includes(tile.id) ? selectedColor : tile.defaultFill}
-        stroke="#333"
-        strokeWidth={2}
-        style={{ cursor: 'pointer' }}
-        onClick={() => onTileClick(tile.id)}
-      />
-    ))}
+    {tilePaths.map((tile) => {
+      // Use tileColors if present, else defaultFill
+      const fill = tileColors[tile.id] || tile.defaultFill;
+      // Optionally, highlight with a border if selected
+      const isSelected = selectedTiles.includes(tile.id);
+      return (
+        <path
+          key={tile.id}
+          d={tile.d}
+          fill={fill}
+          stroke={isSelected ? '#fff' : '#333'}
+          strokeWidth={isSelected ? 3 : 2}
+          style={{ cursor: 'pointer', transition: 'stroke 0.2s, stroke-width 0.2s' }}
+          onClick={() => onTileClick(tile.id)}
+        />
+      );
+    })}
   </svg>
 );
 
