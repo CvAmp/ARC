@@ -1,4 +1,5 @@
 import React, { useState, useRef } from "react";
+import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
 
 // --- Zoomable/Pannable SVG Map Wrapper ---
@@ -99,6 +100,52 @@ const MapSelector: React.FC = () => {
     setTileColors({});
   };
 
+  // Export functionality
+  const exportAsImage = async (format: 'png' | 'jpg' = 'png') => {
+    const mapContainer = document.querySelector('[data-export-target]') as HTMLElement;
+    if (!mapContainer) {
+      alert('Map not found for export');
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(mapContainer, {
+        backgroundColor: format === 'jpg' ? '#ffffff' : null,
+        scale: 2, // Higher resolution
+        useCORS: true,
+        allowTaint: true,
+      });
+
+      // Create download link
+      const link = document.createElement('a');
+      link.download = `map-selection.${format}`;
+      link.href = canvas.toDataURL(`image/${format}`, 0.9);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error('Export failed:', error);
+      alert('Failed to export image. Please try again.');
+    }
+  };
+
+  // Copy current selection as shareable data
+  const copySelectionData = async () => {
+    const selectionData = {
+      tiles: tileColors,
+      timestamp: new Date().toISOString(),
+      totalTiles: Object.keys(tileColors).length
+    };
+    
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(selectionData, null, 2));
+      alert('Selection data copied to clipboard!');
+    } catch (error) {
+      console.error('Copy failed:', error);
+      alert('Failed to copy selection data.');
+    }
+  };
+
   // Handler to set color for a tile (multi-color selection)
   const handleTileClick = (id: number) => {
     setTileColors((prev) => {
@@ -191,6 +238,65 @@ const MapSelector: React.FC = () => {
           >
             Reset All
           </button>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <button
+              onClick={() => exportAsImage('png')}
+              style={{
+                background: '#28a745',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#218838'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#28a745'}
+            >
+              Save PNG
+            </button>
+            
+            <button
+              onClick={() => exportAsImage('jpg')}
+              style={{
+                background: '#17a2b8',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#138496'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#17a2b8'}
+            >
+              Save JPG
+            </button>
+            
+            <button
+              onClick={copySelectionData}
+              style={{
+                background: '#6c757d',
+                color: '#fff',
+                border: 'none',
+                padding: '6px 12px',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 500,
+                transition: 'background 0.2s',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#5a6268'}
+              onMouseLeave={(e) => e.currentTarget.style.background = '#6c757d'}
+            >
+              Copy Data
+            </button>
+          </div>
         </div>
       </div>
       <div style={{
@@ -201,13 +307,16 @@ const MapSelector: React.FC = () => {
         height: 'calc(100vh - 72px)',
         zIndex: 1,
         background: '#23272f',
+        // Add data attribute for export targeting
       }}>
-        <ZoomablePanSvgMap
-          selectedTiles={selectedTiles}
-          selectedColor={selectedColor}
-          tileColors={tileColors}
-          onTileClick={handleTileClick}
-        />
+        <div data-export-target style={{ width: '100%', height: '100%' }}>
+          <ZoomablePanSvgMap
+            selectedTiles={selectedTiles}
+            selectedColor={selectedColor}
+            tileColors={tileColors}
+            onTileClick={handleTileClick}
+          />
+        </div>
       </div>
     </div>
   );
