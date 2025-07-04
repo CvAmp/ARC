@@ -187,132 +187,116 @@ const MapSelector: React.FC = () => {
       background: ${format === 'jpg' ? '#ffffff' : 'rgba(255,255,255,0.98)'};
       border: 2px solid #333;
       border-top: 3px solid #333;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-      align-items: center;
-      justify-content: center;
-      min-height: 120px;
+      display: block;
       width: 1200px;
       box-sizing: border-box;
     `;
 
     // Add title to legend
     const legendTitle = document.createElement('div');
-    legendTitle.textContent = 'Color Legend';
+    legendTitle.textContent = 'Color Selection';
     legendTitle.style.cssText = `
-      width: 100%;
       text-align: center;
-      font-size: 24px;
+      font-size: 20px;
       font-weight: bold;
       color: #333;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+      margin-bottom: 15px;
     `;
     legend.appendChild(legendTitle);
 
-    // Add color items to legend (only colors that are used)
-    const usedColors = COLORS.filter(color => colorCounts[color] > 0);
-    
-    if (usedColors.length === 0) {
-      const noSelectionText = document.createElement('div');
-      noSelectionText.textContent = 'No regions selected';
-      noSelectionText.style.cssText = `
-        color: #666;
-        font-size: 18px;
-        font-weight: 500;
-        text-align: center;
-        width: 100%;
-        padding: 20px;
-      `;
-      legend.appendChild(noSelectionText);
-    } else {
-      const legendContent = document.createElement('div');
-      legendContent.style.cssText = `
+    // Create color palette container (matching the toolbar design)
+    const colorPalette = document.createElement('div');
+    colorPalette.style.cssText = `
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    `;
+
+    // Add all colors with their counts (just like in the toolbar)
+    COLORS.forEach((color) => {
+      const colorContainer = document.createElement('div');
+      colorContainer.style.cssText = `
         display: flex;
-        flex-wrap: wrap;
-        gap: 16px;
-        justify-content: center;
-        width: 100%;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
       `;
-      
-      usedColors.forEach((color, index) => {
-        const colorItem = document.createElement('div');
-        colorItem.style.cssText = `
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 12px 16px;
-          background: ${format === 'jpg' ? '#f8f9fa' : 'rgba(248,249,250,0.95)'};
+
+      // Color circle (matching the toolbar design)
+      const colorCircle = document.createElement('div');
+      colorCircle.style.cssText = `
+        width: 32px;
+        height: 32px;
+        background: ${color};
+        border: ${colorCounts[color] > 0 ? '2.5px solid #333' : '1px solid #888'};
+        border-radius: 50%;
+        box-shadow: ${colorCounts[color] > 0 ? '0 0 6px rgba(0,0,0,0.4)' : 'none'};
+      `;
+
+      // Count label (matching the toolbar design)
+      const countLabel = document.createElement('div');
+      if (colorCounts[color] > 0) {
+        countLabel.textContent = colorCounts[color].toString();
+        countLabel.style.cssText = `
+          font-size: 12px;
+          color: #333;
+          font-weight: bold;
+          background: rgba(255,255,255,0.9);
+          padding: 2px 6px;
           border-radius: 8px;
-          border: 2px solid #333;
-          min-width: 140px;
-        `;
-
-        const colorSwatch = document.createElement('div');
-        colorSwatch.style.cssText = `
-          width: 32px;
-          height: 32px;
-          background: ${color};
-          border: 3px solid #000;
-          border-radius: 50%;
-          flex-shrink: 0;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-        `;
-
-        const colorLabel = document.createElement('span');
-        colorLabel.textContent = `Color ${index + 1}`;
-        colorLabel.style.cssText = `
-          font-weight: bold;
-          color: #333;
-          font-size: 16px;
-        `;
-
-        const colorCount = document.createElement('span');
-        colorCount.textContent = `${colorCounts[color]} region${colorCounts[color] !== 1 ? 's' : ''}`;
-        colorCount.style.cssText = `
-          color: #666;
-          font-size: 15px;
-          font-weight: 500;
-        `;
-
-        colorItem.appendChild(colorSwatch);
-        colorItem.appendChild(colorLabel);
-        colorItem.appendChild(colorCount);
-        legendContent.appendChild(colorItem);
-      });
-      
-      legend.appendChild(legendContent);
-
-      // Add total count
-      const totalSelected = Object.keys(tileColors).length;
-      if (totalSelected > 0) {
-        const totalItem = document.createElement('div');
-        totalItem.style.cssText = `
-          width: 100%;
+          min-width: 16px;
           text-align: center;
-          margin-top: 10px;
-          padding-top: 15px;
-          border-top: 2px solid #333;
-          font-weight: bold;
-          font-size: 18px;
-          color: #333;
+          border: 1px solid #333;
         `;
-        totalItem.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
-        legend.appendChild(totalItem);
+      } else {
+        countLabel.textContent = '0';
+        countLabel.style.cssText = `
+          font-size: 12px;
+          color: #999;
+          font-weight: normal;
+          background: rgba(240,240,240,0.8);
+          padding: 2px 6px;
+          border-radius: 8px;
+          min-width: 16px;
+          text-align: center;
+          border: 1px solid #ccc;
+        `;
       }
-    }
+
+      colorContainer.appendChild(colorCircle);
+      colorContainer.appendChild(countLabel);
+      colorPalette.appendChild(colorContainer);
+    });
+
+    legend.appendChild(colorPalette);
+
+    // Add total count
+    const totalSelected = Object.keys(tileColors).length;
+    const totalItem = document.createElement('div');
+    totalItem.style.cssText = `
+      text-align: center;
+      font-weight: bold;
+      font-size: 16px;
+      color: #333;
+      margin-bottom: 10px;
+      padding: 8px;
+      background: ${format === 'jpg' ? '#f8f9fa' : 'rgba(248,249,250,0.9)'};
+      border-radius: 6px;
+      border: 1px solid #333;
+    `;
+    totalItem.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
+    legend.appendChild(totalItem);
 
     // Add timestamp
     const timestamp = document.createElement('div');
     timestamp.textContent = `Generated: ${new Date().toLocaleString()}`;
     timestamp.style.cssText = `
-      width: 100%;
       text-align: center;
       font-size: 14px;
       color: #666;
-      margin-top: 10px;
       font-weight: 500;
     `;
     legend.appendChild(timestamp);
