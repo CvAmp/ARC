@@ -157,12 +157,152 @@ const MapSelector: React.FC = () => {
       return;
     }
 
+    // Create a temporary container with map and legend
+    const exportContainer = document.createElement('div');
+    exportContainer.style.cssText = `
+      position: fixed;
+      top: -10000px;
+      left: -10000px;
+      width: 1200px;
+      height: auto;
+      background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
+      font-family: system-ui, Arial, sans-serif;
+    `;
+
+    // Clone the map container
+    const mapClone = mapContainer.cloneNode(true) as HTMLElement;
+    mapClone.style.cssText = `
+      width: 1200px;
+      height: 800px;
+      margin: 0;
+      border: none;
+    `;
+
+    // Create legend
+    const legend = document.createElement('div');
+    legend.style.cssText = `
+      padding: 20px;
+      background: ${format === 'jpg' ? '#ffffff' : 'rgba(255,255,255,0.95)'};
+      border-top: 2px solid #ddd;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      align-items: center;
+      justify-content: center;
+    `;
+
+    // Add title to legend
+    const legendTitle = document.createElement('div');
+    legendTitle.textContent = 'Color Legend';
+    legendTitle.style.cssText = `
+      width: 100%;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    `;
+    legend.appendChild(legendTitle);
+
+    // Add color items to legend (only colors that are used)
+    const usedColors = COLORS.filter(color => colorCounts[color] > 0);
+    
+    if (usedColors.length === 0) {
+      const noSelectionText = document.createElement('div');
+      noSelectionText.textContent = 'No regions selected';
+      noSelectionText.style.cssText = `
+        color: #666;
+        font-style: italic;
+        text-align: center;
+        width: 100%;
+      `;
+      legend.appendChild(noSelectionText);
+    } else {
+      usedColors.forEach((color, index) => {
+        const colorItem = document.createElement('div');
+        colorItem.style.cssText = `
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 12px;
+          background: ${format === 'jpg' ? '#f8f9fa' : 'rgba(248,249,250,0.9)'};
+          border-radius: 6px;
+          border: 1px solid #dee2e6;
+        `;
+
+        const colorSwatch = document.createElement('div');
+        colorSwatch.style.cssText = `
+          width: 24px;
+          height: 24px;
+          background: ${color};
+          border: 2px solid #333;
+          border-radius: 50%;
+          flex-shrink: 0;
+        `;
+
+        const colorLabel = document.createElement('span');
+        colorLabel.textContent = `Color ${index + 1}`;
+        colorLabel.style.cssText = `
+          font-weight: 500;
+          color: #333;
+          min-width: 60px;
+        `;
+
+        const colorCount = document.createElement('span');
+        colorCount.textContent = `${colorCounts[color]} region${colorCounts[color] !== 1 ? 's' : ''}`;
+        colorCount.style.cssText = `
+          color: #666;
+          font-size: 14px;
+        `;
+
+        colorItem.appendChild(colorSwatch);
+        colorItem.appendChild(colorLabel);
+        colorItem.appendChild(colorCount);
+        legend.appendChild(colorItem);
+      });
+
+      // Add total count
+      const totalSelected = Object.keys(tileColors).length;
+      if (totalSelected > 0) {
+        const totalItem = document.createElement('div');
+        totalItem.style.cssText = `
+          width: 100%;
+          text-align: center;
+          margin-top: 10px;
+          padding-top: 10px;
+          border-top: 1px solid #dee2e6;
+          font-weight: bold;
+          color: #333;
+        `;
+        totalItem.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
+        legend.appendChild(totalItem);
+      }
+    }
+
+    // Add timestamp
+    const timestamp = document.createElement('div');
+    timestamp.textContent = `Generated: ${new Date().toLocaleString()}`;
+    timestamp.style.cssText = `
+      width: 100%;
+      text-align: center;
+      font-size: 12px;
+      color: #666;
+      margin-top: 8px;
+    `;
+    legend.appendChild(timestamp);
+
+    // Assemble export container
+    exportContainer.appendChild(mapClone);
+    exportContainer.appendChild(legend);
+    document.body.appendChild(exportContainer);
     try {
-      const canvas = await html2canvas(mapContainer, {
+      const canvas = await html2canvas(exportContainer, {
         backgroundColor: format === 'jpg' ? '#ffffff' : null,
         scale: 2, // Higher resolution
         useCORS: true,
         allowTaint: true,
+        width: 1200,
+        height: exportContainer.offsetHeight,
       });
 
       // Create download link
@@ -175,6 +315,9 @@ const MapSelector: React.FC = () => {
     } catch (error) {
       console.error('Export failed:', error);
       alert('Failed to export image. Please try again.');
+    } finally {
+      // Clean up temporary container
+      document.body.removeChild(exportContainer);
     }
   };
 
