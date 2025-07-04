@@ -9,7 +9,15 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
   const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 1600, 1600]);
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
-  // Optionally, you could allow initial zoom to fit parent, but for now always show full map
+  // Convert screen coordinates to SVG coordinates
+  const screenToSvg = (clientX: number, clientY: number) => {
+    if (!svgRef.current) return { x: 0, y: 0 };
+    
+    const rect = svgRef.current.getBoundingClientRect();
+    const x = ((clientX - rect.left) / rect.width) * viewBox[2] + viewBox[0];
+    const y = ((clientY - rect.top) / rect.height) * viewBox[3] + viewBox[1];
+    return { x, y };
+  };
 
   // Mouse/touch pan handlers
   const onMouseDown = (e: React.MouseEvent) => {
@@ -19,8 +27,9 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
   };
   const onMouseMove = (e: React.MouseEvent) => {
     if (drag && svgRef.current) {
-      const dx = ((e.clientX - drag.x) * viewBox[2]) / svgRef.current.clientWidth;
-      const dy = ((e.clientY - drag.y) * viewBox[3]) / svgRef.current.clientHeight;
+      const rect = svgRef.current.getBoundingClientRect();
+      const dx = ((e.clientX - drag.x) / rect.width) * viewBox[2];
+      const dy = ((e.clientY - drag.y) / rect.height) * viewBox[3];
       setViewBox([
         viewBox[0] - dx,
         viewBox[1] - dy,
@@ -32,18 +41,64 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
   };
   const onMouseUp = () => setDrag(null);
 
-  // Zoom handler
+  // Improved zoom handler that zooms toward mouse position
   const onWheel = (e: React.WheelEvent) => {
     e.preventDefault();
-    const scale = e.deltaY < 0 ? 0.9 : 1.1;
+    
+    if (!svgRef.current) return;
+    
+    // Zoom factor - smaller values for smoother zooming
+    const zoomFactor = e.deltaY < 0 ? 0.85 : 1.15;
+    
+    // Get mouse position in SVG coordinates
+    const mousePos = screenToSvg(e.clientX, e.clientY);
+    
     setViewBox(([x, y, w, h]) => {
-      const mx = x + w / 2;
-      const my = y + h / 2;
-      const newW = w * scale;
-      const newH = h * scale;
-      return [mx - newW / 2, my - newH / 2, newW, newH];
+      const newW = w * zoomFactor;
+      const newH = h * zoomFactor;
+      
+      // Calculate new position to keep mouse point stationary
+      const newX = mousePos.x - (mousePos.x - x) * zoomFactor;
+      const newY = mousePos.y - (mousePos.y - y) * zoomFactor;
+      
+      // Constrain zoom levels
+      const minZoom = 100; // Minimum view size
+      const maxZoom = 3200; // Maximum view size (2x zoom out from original)
+      
+      if (newW < minZoom || newH < minZoom || newW > maxZoom || newH > maxZoom) {
+        return [x, y, w, h]; // Don't change if out of bounds
+      }
+      
+      return [newX, newY, newW, newH];
     });
   };
+
+  // Touch handlers for mobile support
+  const onTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 1) {
+      const touch = e.touches[0];
+      setDrag({ x: touch.clientX, y: touch.clientY });
+    }
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    if (drag && e.touches.length === 1 && svgRef.current) {
+      const touch = e.touches[0];
+      const rect = svgRef.current.getBoundingClientRect();
+      const dx = ((touch.clientX - drag.x) / rect.width) * viewBox[2];
+      const dy = ((touch.clientY - drag.y) / rect.height) * viewBox[3];
+      setViewBox([
+        viewBox[0] - dx,
+        viewBox[1] - dy,
+        viewBox[2],
+        viewBox[3],
+      ]);
+      setDrag({ x: touch.clientX, y: touch.clientY });
+    }
+  };
+
+  const onTouchEnd = () => setDrag(null);
 
   return (
     <div
@@ -72,6 +127,9 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onWheel={onWheel}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
       >
         <SvgMap {...props} />
       </svg>
