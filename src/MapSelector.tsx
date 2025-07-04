@@ -160,13 +160,14 @@ const MapSelector: React.FC = () => {
     // Create a temporary container with map and legend
     const exportContainer = document.createElement('div');
     exportContainer.style.cssText = `
-      position: fixed;
-      top: -10000px;
-      left: -10000px;
+      position: absolute;
+      top: -20000px;
+      left: -20000px;
       width: 1200px;
       height: auto;
       background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
       font-family: system-ui, Arial, sans-serif;
+      z-index: 9999;
     `;
 
     // Clone the map container
@@ -176,19 +177,24 @@ const MapSelector: React.FC = () => {
       height: 800px;
       margin: 0;
       border: none;
+      display: block;
     `;
 
     // Create legend
     const legend = document.createElement('div');
     legend.style.cssText = `
       padding: 20px;
-      background: ${format === 'jpg' ? '#ffffff' : 'rgba(255,255,255,0.95)'};
-      border-top: 2px solid #ddd;
+      background: ${format === 'jpg' ? '#ffffff' : 'rgba(255,255,255,0.98)'};
+      border: 2px solid #333;
+      border-top: 3px solid #333;
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
       align-items: center;
       justify-content: center;
+      min-height: 120px;
+      width: 1200px;
+      box-sizing: border-box;
     `;
 
     // Add title to legend
@@ -197,10 +203,12 @@ const MapSelector: React.FC = () => {
     legendTitle.style.cssText = `
       width: 100%;
       text-align: center;
-      font-size: 18px;
+      font-size: 24px;
       font-weight: bold;
       color: #333;
       margin-bottom: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
     `;
     legend.appendChild(legendTitle);
 
@@ -212,54 +220,70 @@ const MapSelector: React.FC = () => {
       noSelectionText.textContent = 'No regions selected';
       noSelectionText.style.cssText = `
         color: #666;
-        font-style: italic;
+        font-size: 18px;
+        font-weight: 500;
         text-align: center;
         width: 100%;
+        padding: 20px;
       `;
       legend.appendChild(noSelectionText);
     } else {
+      const legendContent = document.createElement('div');
+      legendContent.style.cssText = `
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        justify-content: center;
+        width: 100%;
+      `;
+      
       usedColors.forEach((color, index) => {
         const colorItem = document.createElement('div');
         colorItem.style.cssText = `
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 8px 12px;
-          background: ${format === 'jpg' ? '#f8f9fa' : 'rgba(248,249,250,0.9)'};
-          border-radius: 6px;
-          border: 1px solid #dee2e6;
+          gap: 12px;
+          padding: 12px 16px;
+          background: ${format === 'jpg' ? '#f8f9fa' : 'rgba(248,249,250,0.95)'};
+          border-radius: 8px;
+          border: 2px solid #333;
+          min-width: 140px;
         `;
 
         const colorSwatch = document.createElement('div');
         colorSwatch.style.cssText = `
-          width: 24px;
-          height: 24px;
+          width: 32px;
+          height: 32px;
           background: ${color};
-          border: 2px solid #333;
+          border: 3px solid #000;
           border-radius: 50%;
           flex-shrink: 0;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.3);
         `;
 
         const colorLabel = document.createElement('span');
         colorLabel.textContent = `Color ${index + 1}`;
         colorLabel.style.cssText = `
-          font-weight: 500;
+          font-weight: bold;
           color: #333;
-          min-width: 60px;
+          font-size: 16px;
         `;
 
         const colorCount = document.createElement('span');
         colorCount.textContent = `${colorCounts[color]} region${colorCounts[color] !== 1 ? 's' : ''}`;
         colorCount.style.cssText = `
           color: #666;
-          font-size: 14px;
+          font-size: 15px;
+          font-weight: 500;
         `;
 
         colorItem.appendChild(colorSwatch);
         colorItem.appendChild(colorLabel);
         colorItem.appendChild(colorCount);
-        legend.appendChild(colorItem);
+        legendContent.appendChild(colorItem);
       });
+      
+      legend.appendChild(legendContent);
 
       // Add total count
       const totalSelected = Object.keys(tileColors).length;
@@ -269,9 +293,10 @@ const MapSelector: React.FC = () => {
           width: 100%;
           text-align: center;
           margin-top: 10px;
-          padding-top: 10px;
-          border-top: 1px solid #dee2e6;
+          padding-top: 15px;
+          border-top: 2px solid #333;
           font-weight: bold;
+          font-size: 18px;
           color: #333;
         `;
         totalItem.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
@@ -285,9 +310,10 @@ const MapSelector: React.FC = () => {
     timestamp.style.cssText = `
       width: 100%;
       text-align: center;
-      font-size: 12px;
+      font-size: 14px;
       color: #666;
-      margin-top: 8px;
+      margin-top: 10px;
+      font-weight: 500;
     `;
     legend.appendChild(timestamp);
 
@@ -295,6 +321,10 @@ const MapSelector: React.FC = () => {
     exportContainer.appendChild(mapClone);
     exportContainer.appendChild(legend);
     document.body.appendChild(exportContainer);
+    
+    // Force a layout recalculation
+    exportContainer.offsetHeight;
+    
     try {
       const canvas = await html2canvas(exportContainer, {
         backgroundColor: format === 'jpg' ? '#ffffff' : null,
@@ -302,7 +332,8 @@ const MapSelector: React.FC = () => {
         useCORS: true,
         allowTaint: true,
         width: 1200,
-        height: exportContainer.offsetHeight,
+        logging: false,
+        removeContainer: false,
       });
 
       // Create download link
