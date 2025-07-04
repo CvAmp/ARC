@@ -1,20 +1,11 @@
 import { useSearchParams } from 'react-router-dom';
 import html2canvas from 'html2canvas';
 import MapSelector from './MapSelector';
-import { objectives, zones } from './data/sample';
 
 export default function MapView() {
-  const [params, setParams] = useSearchParams();
+  const [params] = useSearchParams();
   const selectedObjs = new Set(params.get('objs')?.split(',').filter(Boolean));
   const selectedZones = new Set(params.get('zones')?.split(',').filter(Boolean));
-
-  const toggle = (set: Set<string>, id: string) => {
-    if (set.has(id)) {
-      set.delete(id);
-    } else {
-      set.add(id);
-    }
-  };
 
   const saveImage = async () => {
     const mapEl = document.getElementById('map');
