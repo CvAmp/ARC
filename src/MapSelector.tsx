@@ -48,18 +48,19 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
     if (!svgRef.current) return;
     
     // Zoom factor - smaller values for smoother zooming
-    const zoomFactor = e.deltaY < 0 ? 0.85 : 1.15;
+    const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
     
-    // Get mouse position in SVG coordinates
-    const mousePos = screenToSvg(e.clientX, e.clientY);
+    // Get the center of the current view for consistent zooming
+    const centerX = viewBox[0] + viewBox[2] / 2;
+    const centerY = viewBox[1] + viewBox[3] / 2;
     
     setViewBox(([x, y, w, h]) => {
       const newW = w * zoomFactor;
       const newH = h * zoomFactor;
       
-      // Calculate new position to keep mouse point stationary
-      const newX = mousePos.x - (mousePos.x - x) * zoomFactor;
-      const newY = mousePos.y - (mousePos.y - y) * zoomFactor;
+      // Calculate new position to keep center point stationary
+      const newX = centerX - newW / 2;
+      const newY = centerY - newH / 2;
       
       // Constrain zoom levels
       const minZoom = 100; // Minimum view size
