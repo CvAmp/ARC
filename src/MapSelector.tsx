@@ -160,14 +160,16 @@ const MapSelector: React.FC = () => {
     // Create a temporary container with map and legend
     const exportContainer = document.createElement('div');
     exportContainer.style.cssText = `
-      position: absolute;
-      top: -20000px;
-      left: -20000px;
+      position: fixed;
+      top: 0;
+      left: 0;
       width: 1200px;
       height: auto;
       background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
       font-family: system-ui, Arial, sans-serif;
-      z-index: 9999;
+      z-index: 10000;
+      pointer-events: none;
+      visibility: hidden;
     `;
 
     // Clone the map container
@@ -178,29 +180,31 @@ const MapSelector: React.FC = () => {
       margin: 0;
       border: none;
       display: block;
+      background: ${format === 'jpg' ? '#ffffff' : 'transparent'};
     `;
 
     // Create legend
     const legend = document.createElement('div');
     legend.style.cssText = `
       padding: 20px;
-      background: ${format === 'jpg' ? '#ffffff' : 'rgba(255,255,255,0.98)'};
-      border: 2px solid #333;
-      border-top: 3px solid #333;
+      background: ${format === 'jpg' ? '#ffffff' : '#ffffff'};
+      border: 2px solid #333333;
       display: block;
       width: 1200px;
       box-sizing: border-box;
+      margin: 0;
     `;
 
     // Add title to legend
     const legendTitle = document.createElement('div');
-    legendTitle.textContent = 'Color Selection';
+    legendTitle.textContent = 'Color Selection Legend';
     legendTitle.style.cssText = `
       text-align: center;
-      font-size: 20px;
+      font-size: 24px;
       font-weight: bold;
-      color: #333;
+      color: #333333;
       margin-bottom: 15px;
+      font-family: Arial, sans-serif;
     `;
     legend.appendChild(legendTitle);
 
@@ -211,7 +215,8 @@ const MapSelector: React.FC = () => {
       justify-content: center;
       align-items: center;
       gap: 12px;
-      flex-wrap: wrap;
+      flex-wrap: nowrap;
+      overflow-x: auto;
       margin-bottom: 15px;
     `;
 
@@ -221,6 +226,7 @@ const MapSelector: React.FC = () => {
       colorContainer.style.cssText = `
         display: flex;
         flex-direction: column;
+        flex-shrink: 0;
         align-items: center;
         gap: 4px;
       `;
@@ -231,7 +237,7 @@ const MapSelector: React.FC = () => {
         width: 32px;
         height: 32px;
         background: ${color};
-        border: ${colorCounts[color] > 0 ? '2.5px solid #333' : '1px solid #888'};
+        border: ${colorCounts[color] > 0 ? '3px solid #333333' : '2px solid #888888'};
         border-radius: 50%;
         box-shadow: ${colorCounts[color] > 0 ? '0 0 6px rgba(0,0,0,0.4)' : 'none'};
       `;
@@ -242,27 +248,29 @@ const MapSelector: React.FC = () => {
         countLabel.textContent = colorCounts[color].toString();
         countLabel.style.cssText = `
           font-size: 12px;
-          color: #333;
+          color: #333333;
           font-weight: bold;
-          background: rgba(255,255,255,0.9);
+          background: #ffffff;
           padding: 2px 6px;
           border-radius: 8px;
+          border: 1px solid #333333;
           min-width: 16px;
           text-align: center;
-          border: 1px solid #333;
+          font-family: Arial, sans-serif;
         `;
       } else {
         countLabel.textContent = '0';
         countLabel.style.cssText = `
           font-size: 12px;
-          color: #999;
+          color: #999999;
           font-weight: normal;
-          background: rgba(240,240,240,0.8);
+          background: #f0f0f0;
           padding: 2px 6px;
           border-radius: 8px;
+          border: 1px solid #cccccc;
           min-width: 16px;
           text-align: center;
-          border: 1px solid #ccc;
+          font-family: Arial, sans-serif;
         `;
       }
 
@@ -279,13 +287,14 @@ const MapSelector: React.FC = () => {
     totalItem.style.cssText = `
       text-align: center;
       font-weight: bold;
-      font-size: 16px;
-      color: #333;
+      font-size: 18px;
+      color: #333333;
       margin-bottom: 10px;
       padding: 8px;
-      background: ${format === 'jpg' ? '#f8f9fa' : 'rgba(248,249,250,0.9)'};
+      background: #f8f9fa;
       border-radius: 6px;
-      border: 1px solid #333;
+      border: 1px solid #333333;
+      font-family: Arial, sans-serif;
     `;
     totalItem.textContent = `Total: ${totalSelected} region${totalSelected !== 1 ? 's' : ''} selected`;
     legend.appendChild(totalItem);
@@ -296,8 +305,9 @@ const MapSelector: React.FC = () => {
     timestamp.style.cssText = `
       text-align: center;
       font-size: 14px;
-      color: #666;
+      color: #666666;
       font-weight: 500;
+      font-family: Arial, sans-serif;
     `;
     legend.appendChild(timestamp);
 
@@ -306,8 +316,13 @@ const MapSelector: React.FC = () => {
     exportContainer.appendChild(legend);
     document.body.appendChild(exportContainer);
     
-    // Force a layout recalculation
-    exportContainer.offsetHeight;
+    // Make visible for rendering and force layout
+    exportContainer.style.visibility = 'visible';
+    exportContainer.style.position = 'absolute';
+    exportContainer.style.top = '0px';
+    exportContainer.style.left = '0px';
+    
+    await new Promise(resolve => setTimeout(resolve, 100)); // Give time for rendering
     
     try {
       const canvas = await html2canvas(exportContainer, {
@@ -316,7 +331,6 @@ const MapSelector: React.FC = () => {
         useCORS: true,
         allowTaint: true,
         width: 1200,
-        logging: false,
         removeContainer: false,
       });
 
