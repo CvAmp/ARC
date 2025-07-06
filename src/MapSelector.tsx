@@ -310,7 +310,7 @@ const MapSelector: React.FC = () => {
     }));
   };
 
-  const handleLabelKeyPress = (e: React.KeyboardEvent, color: string) => {
+  const handleLabelKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       setEditingLabel(null);
     }
@@ -379,7 +379,7 @@ const MapSelector: React.FC = () => {
                       value={colorLabels[color] || ''}
                       onChange={(e) => handleLabelEdit(color, e.target.value)}
                       onBlur={() => setEditingLabel(null)}
-                      onKeyPress={(e) => handleLabelKeyPress(e, color)}
+                      onKeyPress={handleLabelKeyPress}
                       autoFocus
                       style={{
                         width: '70px',
