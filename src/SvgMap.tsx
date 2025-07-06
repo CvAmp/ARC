@@ -2,7 +2,6 @@ import React from 'react';
 
 type SvgMapProps = {
   selectedTiles: number[];
-  selectedColor: string;
   tileColors: { [id: number]: string };
   colorLabels: { [color: string]: string };
   onTileClick: (id: number) => void;
@@ -242,7 +241,7 @@ const tilePaths = [
   },
 ];
 
-const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, selectedColor, tileColors, colorLabels, onTileClick }) => {
+const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, tileColors, colorLabels, onTileClick }) => {
   const getTileLabel = (id: number) => {
     const tileColor = tileColors[id];
     if (tileColor && colorLabels[tileColor] && colorLabels[tileColor].trim() !== '') {
