@@ -382,8 +382,8 @@ const MapSelector: React.FC = () => {
                       onKeyPress={handleLabelKeyPress}
                       autoFocus
                       style={{
-                        width: '70px',
-                        fontSize: '10px',
+                        width: '80px',
+                        fontSize: '12px',
                         padding: '2px 4px',
                         border: '1px solid #ccc',
                         borderRadius: '3px',
@@ -397,13 +397,13 @@ const MapSelector: React.FC = () => {
                     <div
                       onClick={() => setEditingLabel(color)}
                       style={{
-                        fontSize: '10px',
+                        fontSize: '12px',
                         color: '#fff',
                         cursor: 'pointer',
                         textAlign: 'center',
-                        minHeight: '14px',
-                        width: '70px',
-                        padding: '2px',
+                        minHeight: '18px',
+                        width: '80px',
+                        padding: '3px 4px',
                         borderRadius: '3px',
                         background: colorLabels[color] ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)',
                         border: '1px solid transparent',
@@ -411,6 +411,9 @@ const MapSelector: React.FC = () => {
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
                       }}
                       title={colorLabels[color] || 'Click to add label'}
                     >
@@ -420,7 +423,7 @@ const MapSelector: React.FC = () => {
                   
                   {colorCounts[color] > 0 && (
                     <span style={{ 
-                      fontSize: '10px', 
+                      fontSize: '11px', 
                       color: '#fff', 
                       fontWeight: 'bold',
                       background: 'rgba(0,0,0,0.6)',
