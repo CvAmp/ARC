@@ -588,6 +588,7 @@ const MapSelector: React.FC = () => {
             selectedTiles={selectedTiles}
             selectedColor={selectedColor}
             tileColors={tileColors}
+            colorLabels={colorLabels}
             onTileClick={handleTileClick}
           />
         </div>

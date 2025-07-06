@@ -4,6 +4,7 @@ type SvgMapProps = {
   selectedTiles: number[];
   selectedColor: string;
   tileColors: { [id: number]: string };
+  colorLabels: { [color: string]: string };
   onTileClick: (id: number) => void;
 };
 
@@ -241,26 +242,58 @@ const tilePaths = [
   },
 ];
 
-const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, /*selectedColor,*/ tileColors, onTileClick }) => (
-  <svg viewBox="0 0 1600 1600">
-    {tilePaths.map((tile) => {
-      // Use tileColors if present, else defaultFill
-      const fill = tileColors[tile.id] || tile.defaultFill;
-      // Optionally, highlight with a border if selected
-      const isSelected = selectedTiles.includes(tile.id);
-      return (
-        <path
-          key={tile.id}
-          d={tile.d}
-          fill={fill}
-          stroke={isSelected ? '#fff' : '#333'}
-          strokeWidth={isSelected ? 3 : 2}
-          style={{ cursor: 'pointer', transition: 'stroke 0.2s, stroke-width 0.2s' }}
-          onClick={() => onTileClick(tile.id)}
-        />
-      );
-    })}
-  </svg>
-);
+const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, selectedColor, tileColors, colorLabels, onTileClick }) => {
+  const getTileLabel = (id: number) => {
+    const tileColor = tileColors[id];
+    if (tileColor && colorLabels[tileColor] && colorLabels[tileColor].trim() !== '') {
+      return colorLabels[tileColor];
+    }
+    return null;
+  };
+
+  return (
+    <svg viewBox="0 0 1600 1600">
+      {tilePaths.map((tile) => {
+        // Use tileColors if present, else defaultFill
+        const fill = tileColors[tile.id] || tile.defaultFill;
+        // Optionally, highlight with a border if selected
+        const isSelected = selectedTiles.includes(tile.id);
+        const label = getTileLabel(tile.id);
+        
+        return (
+          <g key={tile.id}>
+            <path
+              d={tile.d}
+              fill={fill}
+              stroke={isSelected ? '#fff' : '#333'}
+              strokeWidth={isSelected ? 3 : 2}
+              style={{ cursor: 'pointer', transition: 'stroke 0.2s, stroke-width 0.2s' }}
+              onClick={() => onTileClick(tile.id)}
+            />
+            {label && (
+              <text
+                x="800"
+                y="800"
+                textAnchor="middle"
+                dominantBaseline="middle"
+                fill="#ffffff"
+                fontSize="10"
+                fontWeight="bold"
+                stroke="#000000"
+                strokeWidth="0.5"
+                style={{
+                  pointerEvents: 'none',
+                  textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                }}
+              >
+                {label}
+              </text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+};
 
 export default SvgMap;
