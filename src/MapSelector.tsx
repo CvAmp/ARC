@@ -137,6 +137,8 @@ const MapSelector: React.FC = () => {
   // tileColors: { [tileId: number]: color }
   const [tileColors, setTileColors] = useState<{ [id: number]: string }>({});
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[2]);
+  const [colorLabels, setColorLabels] = useState<{ [color: string]: string }>({});
+  const [editingLabel, setEditingLabel] = useState<string | null>(null);
 
   // Calculate color counts
   const colorCounts = COLORS.reduce((acc, color) => {
@@ -147,6 +149,7 @@ const MapSelector: React.FC = () => {
   // Reset all selections
   const resetSelections = () => {
     setTileColors({});
+    setColorLabels({});
   };
 
   // Export functionality
@@ -177,6 +180,7 @@ const MapSelector: React.FC = () => {
   const copySelectionData = async () => {
     const selectionData = {
       tiles: tileColors,
+      labels: colorLabels,
       timestamp: new Date().toISOString(),
       totalTiles: Object.keys(tileColors).length
     };
@@ -213,6 +217,18 @@ const MapSelector: React.FC = () => {
               }
             });
             setTileColors(validTiles);
+            
+            // Import labels if they exist
+            if (data.labels && typeof data.labels === 'object') {
+              const validLabels: { [color: string]: string } = {};
+              Object.entries(data.labels).forEach(([color, label]) => {
+                if (typeof color === 'string' && typeof label === 'string' && COLORS.includes(color)) {
+                  validLabels[color] = label;
+                }
+              });
+              setColorLabels(validLabels);
+            }
+            
             alert(`Successfully imported ${Object.keys(validTiles).length} tile selections!`);
           } else {
             alert('Invalid file format. Please select a valid selection data file.');
@@ -243,6 +259,18 @@ const MapSelector: React.FC = () => {
           }
         });
         setTileColors(validTiles);
+        
+        // Import labels if they exist
+        if (data.labels && typeof data.labels === 'object') {
+          const validLabels: { [color: string]: string } = {};
+          Object.entries(data.labels).forEach(([color, label]) => {
+            if (typeof color === 'string' && typeof label === 'string' && COLORS.includes(color)) {
+              validLabels[color] = label;
+            }
+          });
+          setColorLabels(validLabels);
+        }
+        
         alert(`Successfully imported ${Object.keys(validTiles).length} tile selections from clipboard!`);
       } else {
         alert('Invalid clipboard data. Please copy valid selection data first.');
@@ -257,6 +285,7 @@ const MapSelector: React.FC = () => {
   const saveSelectionData = () => {
     const selectionData = {
       tiles: tileColors,
+      labels: colorLabels,
       timestamp: new Date().toISOString(),
       totalTiles: Object.keys(tileColors).length,
       version: '1.0'
@@ -272,6 +301,21 @@ const MapSelector: React.FC = () => {
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
   };
+
+  // Handle label editing
+  const handleLabelEdit = (color: string, label: string) => {
+    setColorLabels(prev => ({
+      ...prev,
+      [color]: label
+    }));
+  };
+
+  const handleLabelKeyPress = (e: React.KeyboardEvent, color: string) => {
+    if (e.key === 'Enter') {
+      setEditingLabel(null);
+    }
+  };
+
   // Handler to set color for a tile (multi-color selection)
   const handleTileClick = (id: number) => {
     setTileColors((prev) => {
@@ -310,7 +354,7 @@ const MapSelector: React.FC = () => {
             <span style={{ fontWeight: 500, color: '#fff' }}>Select color:</span>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {COLORS.map((color) => (
-                <div key={color} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+                <div key={color} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 80 }}>
                   <button
                     style={{
                       background: color,
@@ -327,6 +371,53 @@ const MapSelector: React.FC = () => {
                     aria-label={color}
                     onClick={() => setSelectedColor(color)}
                   />
+                  
+                  {/* Label input/display */}
+                  {editingLabel === color ? (
+                    <input
+                      type="text"
+                      value={colorLabels[color] || ''}
+                      onChange={(e) => handleLabelEdit(color, e.target.value)}
+                      onBlur={() => setEditingLabel(null)}
+                      onKeyPress={(e) => handleLabelKeyPress(e, color)}
+                      autoFocus
+                      style={{
+                        width: '70px',
+                        fontSize: '10px',
+                        padding: '2px 4px',
+                        border: '1px solid #ccc',
+                        borderRadius: '3px',
+                        textAlign: 'center',
+                        background: '#fff',
+                        color: '#000',
+                      }}
+                      placeholder="Label"
+                    />
+                  ) : (
+                    <div
+                      onClick={() => setEditingLabel(color)}
+                      style={{
+                        fontSize: '10px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        textAlign: 'center',
+                        minHeight: '14px',
+                        width: '70px',
+                        padding: '2px',
+                        borderRadius: '3px',
+                        background: colorLabels[color] ? 'rgba(0,0,0,0.6)' : 'rgba(0,0,0,0.3)',
+                        border: '1px solid transparent',
+                        transition: 'background 0.2s',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                      title={colorLabels[color] || 'Click to add label'}
+                    >
+                      {colorLabels[color] || 'Label'}
+                    </div>
+                  )}
+                  
                   {colorCounts[color] > 0 && (
                     <span style={{ 
                       fontSize: '10px', 
