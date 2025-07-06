@@ -2,6 +2,7 @@ import React from 'react';
 
 type SvgMapProps = {
   selectedTiles: number[];
+  selectedColor: string;
   tileColors: { [id: number]: string };
   colorLabels: { [color: string]: string };
   onTileClick: (id: number) => void;
