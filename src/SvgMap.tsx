@@ -237,21 +237,47 @@ const tilePaths = [
   },
   {
     id: 46,
-    d: 'M651.12,748.83c.1,5.2,1.54,15.31-1.61,20.02-4.3-1.26-10.55.89-14.85,1.08-3.48.15-10.93-2.26-13.28,1.31-2.12,15.32-.68,30.4.13,45.71-.03,3.01,1.89,11.78-3.27,12.39-13.34.92-26.71,1.56-40.07.61-1.92-.11-7.83-.07-9.84-2.13-3.39-3.48-.59-12.45-1.01-16.88.15-13.89-7.24-13.11-18.3-12.36-13.73-.39-27.49,0-41.07-1.29-2.01-8.37.29-18.48-3.18-26.72-2.11-2.74-6.12-1.9-9.1-1.92-16.33-.1-33.87-4.46-49.95-.38-9.69,1.61-.16,19.71-4.45,28.43-7.77.72-15.83-1.54-23.59-1.06-.68-7.88,2.2-19.29-1.7-26.17-2.65-2.27-11.88-.54-15.08-.52-19.93,1.33-13.83-13.85-13.96-26.9-.62-4.12-1.8-3.35-5.89-3.58-26.57,1.65-24.57,0-23.01-25.08,1.05-13.23,5.16-40.85-17.25-34.09-2.33.3-7.9,1.95-10.2,1.03-4.49-2.5-1.15-18.76-1.53-23.88,27,.47,54.49-3.92,81.44-1.63,8.84,2.88,8.75-8.11,7.77-13.74-.46-13.96-1.17-28.67.95-42.5,16.8-1.28,34.7-4.78,51.53-1.31.84,7.09.99,14.56,2,21.54.9,6.18,4.85,6.44,11.09,6.22,8.89-.31,17.65.97,26.56,1.18,4.44.1,16.76-2.08,19.82,1.31,2.28,14.63-8.34,28.83,16.25,27.88,4.53-.17,9.23-2.08,12.3,1.75,3.82,4.76,1.42,14.04,2.4,19.58,1.36,12.79,17.74,6.27,25.92,10.08,3.25,2.34,3.19,11.51,3.97,14.73.72,2.93,1.84,5.67,2.75,8.54,1.2,3.77,1.28,3.87,5.08,4.7,4.6,1.01,16.3-2.04,20.07,2.42,2.01,2.37.43,6.85.18,9.6-.39,4.13.49,7.38,1.67,11.32,1.54,5.14,1.21,5.03,6.89,6.06,4.65.84,16.58,3.47,23.42,4.65Z',
-    defaultFill: '#907e5d',
-  },
-];
-
-const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, tileColors, colorLabels, onTileClick }) => {
-  const getTileLabel = (id: number) => {
-    const tileColor = tileColors[id];
-    if (tileColor && colorLabels[tileColor] && colorLabels[tileColor].trim() !== '') {
-      return colorLabels[tileColor];
-    }
-    return null;
-  };
-
-  return (
+              <g key={id}>
+                <rect
+                  id={`tile-${id}`}
+                  x={x}
+                  y={y}
+                  width={78}
+                  height={78}
+                  style={getTileStyle(id)}
+                  onClick={() => handleTileClick(id)}
+                  onMouseEnter={(e) => {
+                    if (!tileColors[id]) {
+                      e.currentTarget.style.fill = '#A0906B';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!tileColors[id]) {
+                      e.currentTarget.style.fill = '#8B7355';
+                    }
+                  }}
+                />
+                {/* Display label on each colored tile */}
+                {label && (
+                  <text
+                    x={x + 39}
+                    y={y + 42}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fill="#ffffff"
+                    fontSize="14"
+                    fontWeight="bold"
+                    stroke="#000000"
+                    strokeWidth="0.5"
+                    style={{
+                      pointerEvents: 'none',
+                      textShadow: '1px 1px 2px rgba(0,0,0,0.8)',
+                    }}
+                  >
+                    {label}
+                  </text>
+                )}
+              </g>
     <svg viewBox="0 0 1600 1600">
       {tilePaths.map((tile) => {
         // Use tileColors if present, else defaultFill
@@ -297,3 +323,4 @@ const SvgMap: React.FC<SvgMapProps> = ({ selectedTiles, tileColors, colorLabels,
 };
 
 export default SvgMap;
+            const label = getTileLabel(id);
