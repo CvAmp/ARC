@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
+import LeafletMap from "./LeafletMap";
 
 // --- Zoomable/Pannable SVG Map Wrapper ---
 const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props) => {
@@ -139,6 +140,13 @@ const MapSelector: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[2]);
   const [colorLabels, setColorLabels] = useState<{ [color: string]: string }>({});
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
+  const [mapType, setMapType] = useState<'svg' | 'leaflet'>('svg');
+  
+  // States for gates and shrines
+  const [selectedGates, setSelectedGates] = useState<string[]>([]);
+  const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
+  const [selectedShrines, setSelectedShrines] = useState<string[]>([]);
+  const [shrineColors, setShrineColors] = useState<{ [id: string]: string }>({});
 
   // Calculate color counts
   const colorCounts = COLORS.reduce((acc, color) => {
@@ -150,6 +158,8 @@ const MapSelector: React.FC = () => {
   const resetSelections = () => {
     setTileColors({});
     setColorLabels({});
+    setGateColors({});
+    setShrineColors({});
   };
 
   // Export functionality
@@ -330,6 +340,34 @@ const MapSelector: React.FC = () => {
     });
   };
 
+  // Handler for gate clicks
+  const handleGateClick = (id: string) => {
+    setGateColors((prev) => {
+      // If already this color, remove color (deselect)
+      if (prev[id] === selectedColor) {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      }
+      // Otherwise, set to selectedColor
+      return { ...prev, [id]: selectedColor };
+    });
+  };
+
+  // Handler for shrine clicks  
+  const handleShrineClick = (id: string) => {
+    setShrineColors((prev) => {
+      // If already this color, remove color (deselect)
+      if (prev[id] === selectedColor) {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+      }
+      // Otherwise, set to selectedColor
+      return { ...prev, [id]: selectedColor };
+    });
+  };
+
   // For highlighting: which tiles are currently selected (any color)
   const selectedTiles = Object.keys(tileColors).map(Number);
 
@@ -457,6 +495,25 @@ const MapSelector: React.FC = () => {
             onMouseLeave={(e) => e.currentTarget.style.background = '#dc3545'}
           >
             Reset All
+          </button>
+          
+          <button
+            onClick={() => setMapType(mapType === 'svg' ? 'leaflet' : 'svg')}
+            style={{
+              background: mapType === 'leaflet' ? '#007bff' : '#6c757d',
+              color: '#fff',
+              border: 'none',
+              padding: '6px 12px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 500,
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = mapType === 'leaflet' ? '#0056b3' : '#5a6268'}
+            onMouseLeave={(e) => e.currentTarget.style.background = mapType === 'leaflet' ? '#007bff' : '#6c757d'}
+          >
+            {mapType === 'svg' ? '🗺️ Leaflet' : '📊 SVG'}
           </button>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -587,13 +644,70 @@ const MapSelector: React.FC = () => {
         // Add data attribute for export targeting
       }}>
         <div data-export-target style={{ width: '100%', height: '100%' }}>
-          <ZoomablePanSvgMap
-            selectedTiles={selectedTiles}
-            selectedColor={selectedColor}
-            tileColors={tileColors}
-            colorLabels={colorLabels}
-            onTileClick={handleTileClick}
-          />
+          {mapType === 'svg' ? (
+            <ZoomablePanSvgMap
+              selectedTiles={selectedTiles}
+              selectedColor={selectedColor}
+              tileColors={tileColors}
+              colorLabels={colorLabels}
+              onTileClick={handleTileClick}
+              selectedGates={selectedGates}
+              gateColors={gateColors}
+              onGateClick={handleGateClick}
+              selectedShrines={selectedShrines}
+              shrineColors={shrineColors}
+              onShrineClick={handleShrineClick}
+            />
+          ) : (
+            <LeafletMap
+              selectedTiles={selectedTiles}
+              selectedColor={selectedColor}
+              tileColors={tileColors}
+              colorLabels={colorLabels}
+              onTileClick={handleTileClick}
+              selectedGates={selectedGates}
+              gateColors={gateColors}
+              onGateClick={handleGateClick}
+              selectedShrines={selectedShrines}
+              shrineColors={shrineColors}
+              onShrineClick={handleShrineClick}
+              width={window.innerWidth}
+              height={window.innerHeight - 72}
+            />
+          )}
+        </div>
+      </div>
+      
+      {/* Credits Section */}
+      <div style={{
+        position: 'fixed',
+        bottom: 8,
+        right: 8,
+        background: 'rgba(35, 39, 47, 0.95)',
+        color: '#fff',
+        padding: '8px 12px',
+        borderRadius: '6px',
+        fontSize: '11px',
+        fontFamily: 'monospace',
+        zIndex: 1000,
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+        backdropFilter: 'blur(4px)',
+        textAlign: 'right',
+        lineHeight: '1.3',
+        maxWidth: '200px'
+      }}>
+        <div style={{ fontWeight: 'bold', fontSize: '10px', opacity: 0.8, marginBottom: '2px' }}>
+          Credits
+        </div>
+        <div style={{ marginBottom: '1px' }}>
+          Josh Strunk aka Cvamp
+        </div>
+        <div style={{ marginBottom: '1px' }}>
+          Wan
+        </div>
+        <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '2px' }}>
+          World 35
         </div>
       </div>
     </div>
