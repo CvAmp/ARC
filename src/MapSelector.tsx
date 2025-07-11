@@ -143,9 +143,7 @@ const MapSelector: React.FC = () => {
   const [mapType, setMapType] = useState<'svg' | 'leaflet'>('svg');
   
   // States for gates and shrines
-  const [selectedGates, setSelectedGates] = useState<string[]>([]);
   const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
-  const [selectedShrines, setSelectedShrines] = useState<string[]>([]);
   const [shrineColors, setShrineColors] = useState<{ [id: string]: string }>({});
 
   // Calculate color counts
@@ -370,6 +368,8 @@ const MapSelector: React.FC = () => {
 
   // For highlighting: which tiles are currently selected (any color)
   const selectedTiles = Object.keys(tileColors).map(Number);
+  const selectedGates = Object.keys(gateColors);
+  const selectedShrines = Object.keys(shrineColors);
 
   return (
     <div style={{ height: '100vh', width: '100vw', margin: 0, padding: 0, overflow: 'hidden', position: 'fixed', top: 0, left: 0, background: '#23272f' }}>
