@@ -1,5 +1,4 @@
 import React from 'react';
-import mapSvg from './assets/map_ARC.svg';
 
 type SvgMapProps = {
   selectedTiles: number[];
