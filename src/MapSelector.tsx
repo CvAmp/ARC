@@ -1,7 +1,9 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, Suspense, lazy } from "react";
 import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
-import LeafletMap from "./LeafletMap";
+
+// Lazy load LeafletMap for code splitting
+const LeafletMap = lazy(() => import("./LeafletMap"));
 
 // --- Zoomable/Pannable SVG Map Wrapper ---
 const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props) => {
@@ -659,21 +661,37 @@ const MapSelector: React.FC = () => {
               onShrineClick={handleShrineClick}
             />
           ) : (
-            <LeafletMap
-              selectedTiles={selectedTiles}
-              selectedColor={selectedColor}
-              tileColors={tileColors}
-              colorLabels={colorLabels}
-              onTileClick={handleTileClick}
-              selectedGates={selectedGates}
-              gateColors={gateColors}
-              onGateClick={handleGateClick}
-              selectedShrines={selectedShrines}
-              shrineColors={shrineColors}
-              onShrineClick={handleShrineClick}
-              width={window.innerWidth}
-              height={window.innerHeight - 72}
-            />
+            <Suspense fallback={
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '100%', 
+                color: '#fff',
+                background: '#23272f'
+              }}>
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '18px', marginBottom: '8px' }}>🗺️</div>
+                  <div>Loading Leaflet Map...</div>
+                </div>
+              </div>
+            }>
+              <LeafletMap
+                selectedTiles={selectedTiles}
+                selectedColor={selectedColor}
+                tileColors={tileColors}
+                colorLabels={colorLabels}
+                onTileClick={handleTileClick}
+                selectedGates={selectedGates}
+                gateColors={gateColors}
+                onGateClick={handleGateClick}
+                selectedShrines={selectedShrines}
+                shrineColors={shrineColors}
+                onShrineClick={handleShrineClick}
+                width={window.innerWidth}
+                height={window.innerHeight - 72}
+              />
+            </Suspense>
           )}
         </div>
       </div>
