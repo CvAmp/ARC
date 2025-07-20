@@ -6,11 +6,97 @@ import SvgMap from "./SvgMap";
 const LeafletMap = lazy(() => import("./LeafletMap"));
 
 // --- Zoomable/Pannable SVG Map Wrapper ---
-const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props) => {
+interface ZoomablePanSvgMapProps extends React.ComponentProps<typeof SvgMap> {
+  onResetZoom?: (resetFn: () => void) => void;
+}
+
+const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
+  // Extract onResetZoom from props
+  const { onResetZoom, ...svgMapProps } = props;
+  
   // Responsive SVG sizing: fill parent, viewBox always [0,0,1600,1600]
   const svgRef = useRef<SVGSVGElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 1600, 1600]);
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
+
+  // Reset zoom function
+  const resetZoom = () => {
+    setViewBox([0, 0, 1600, 1600]);
+  };
+
+  // Expose reset function to parent
+  React.useEffect(() => {
+    if (onResetZoom) {
+      onResetZoom(resetZoom);
+    }
+  }, [onResetZoom]);
+
+  // Keyboard controls
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!svgRef.current) return;
+      
+      const panAmount = viewBox[2] * 0.1; // Pan 10% of current view
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          setViewBox(([x, y, w, h]) => [x, y - panAmount, w, h]);
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          setViewBox(([x, y, w, h]) => [x, y + panAmount, w, h]);
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          setViewBox(([x, y, w, h]) => [x - panAmount, y, w, h]);
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          setViewBox(([x, y, w, h]) => [x + panAmount, y, w, h]);
+          break;
+        case '=':
+        case '+':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const zoomFactor = 0.9;
+            const centerX = viewBox[0] + viewBox[2] / 2;
+            const centerY = viewBox[1] + viewBox[3] / 2;
+            setViewBox(([x, y, w, h]) => {
+              const newW = w * zoomFactor;
+              const newH = h * zoomFactor;
+              if (newW < 100 || newH < 100) return [x, y, w, h];
+              return [centerX - newW / 2, centerY - newH / 2, newW, newH];
+            });
+          }
+          break;
+        case '-':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            const zoomFactor = 1.1;
+            const centerX = viewBox[0] + viewBox[2] / 2;
+            const centerY = viewBox[1] + viewBox[3] / 2;
+            setViewBox(([x, y, w, h]) => {
+              const newW = w * zoomFactor;
+              const newH = h * zoomFactor;
+              if (newW > 3200 || newH > 3200) return [x, y, w, h];
+              return [centerX - newW / 2, centerY - newH / 2, newW, newH];
+            });
+          }
+          break;
+        case '0':
+          if (e.ctrlKey || e.metaKey) {
+            e.preventDefault();
+            resetZoom();
+          }
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [viewBox, resetZoom]);
 
   // Mouse/touch pan handlers
   const onMouseDown = (e: React.MouseEvent) => {
@@ -23,49 +109,85 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
       const rect = svgRef.current.getBoundingClientRect();
       const dx = ((e.clientX - drag.x) / rect.width) * viewBox[2];
       const dy = ((e.clientY - drag.y) / rect.height) * viewBox[3];
-      setViewBox([
-        viewBox[0] - dx,
-        viewBox[1] - dy,
-        viewBox[2],
-        viewBox[3],
-      ]);
+      
+      setViewBox(([x, y, w, h]) => {
+        const newX = x - dx;
+        const newY = y - dy;
+        
+        // Apply some loose bounds to prevent panning too far
+        const maxOffset = Math.max(w, h) * 0.5; // Allow panning half a view beyond edges
+        const minX = -maxOffset;
+        const minY = -maxOffset;
+        const maxX = 1600 + maxOffset - w;
+        const maxY = 1600 + maxOffset - h;
+        
+        return [
+          Math.max(minX, Math.min(maxX, newX)),
+          Math.max(minY, Math.min(maxY, newY)),
+          w,
+          h,
+        ];
+      });
+      
       setDrag({ x: e.clientX, y: e.clientY });
     }
   };
   const onMouseUp = () => setDrag(null);
 
-  // Improved zoom handler that zooms toward mouse position
-  const onWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    
-    if (!svgRef.current) return;
-    
-    // Zoom factor - smaller values for smoother zooming
-    const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
-    
-    // Get the center of the current view for consistent zooming
-    const centerX = viewBox[0] + viewBox[2] / 2;
-    const centerY = viewBox[1] + viewBox[3] / 2;
-    
-    setViewBox(([x, y, w, h]) => {
-      const newW = w * zoomFactor;
-      const newH = h * zoomFactor;
-      
-      // Calculate new position to keep center point stationary
-      const newX = centerX - newW / 2;
-      const newY = centerY - newH / 2;
-      
-      // Constrain zoom levels
-      const minZoom = 100; // Minimum view size
-      const maxZoom = 3200; // Maximum view size (2x zoom out from original)
-      
-      if (newW < minZoom || newH < minZoom || newW > maxZoom || newH > maxZoom) {
-        return [x, y, w, h]; // Don't change if out of bounds
+  // Manually handle wheel event to ensure preventDefault works
+  React.useEffect(() => {
+    const containerElement = containerRef.current;
+    if (!containerElement) {
+      return;
+    }
+
+    const handleWheel = (e: WheelEvent) => {
+      // Only zoom when Alt is held down
+      if (!e.altKey) {
+        return;
       }
       
-      return [newX, newY, newW, newH];
-    });
-  };
+      // This is the key change: explicitly prevent default browser scroll
+      e.preventDefault();
+      e.stopPropagation(); // Stop event from bubbling up
+      
+      if (!svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+      
+      const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
+      
+      setViewBox(([x, y, w, h]) => {
+        const newW = w * zoomFactor;
+        const newH = h * zoomFactor;
+        
+        const minZoom = 100;
+        const maxZoom = 3200;
+        
+        if (newW < minZoom || newH < minZoom || newW > maxZoom || newH > maxZoom) {
+          return [x, y, w, h];
+        }
+        
+        // Convert mouse screen coordinates to SVG world coordinates
+        const worldX = x + (mouseX / rect.width) * w;
+        const worldY = y + (mouseY / rect.height) * h;
+        
+        // Calculate the new top-left corner to keep the world point under the mouse
+        const newX = worldX - (mouseX / rect.width) * newW;
+        const newY = worldY - (mouseY / rect.height) * newH;
+        
+        return [newX, newY, newW, newH];
+      });
+    };
+
+    // Add the event listener with passive: false to allow preventDefault
+    containerElement.addEventListener('wheel', handleWheel, { passive: false });
+
+    return () => {
+      containerElement.removeEventListener('wheel', handleWheel);
+    };
+  }, [viewBox, setViewBox]);
 
   // Touch handlers for mobile support
   const onTouchStart = (e: React.TouchEvent) => {
@@ -82,12 +204,26 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
       const rect = svgRef.current.getBoundingClientRect();
       const dx = ((touch.clientX - drag.x) / rect.width) * viewBox[2];
       const dy = ((touch.clientY - drag.y) / rect.height) * viewBox[3];
-      setViewBox([
-        viewBox[0] - dx,
-        viewBox[1] - dy,
-        viewBox[2],
-        viewBox[3],
-      ]);
+      
+      setViewBox(([x, y, w, h]) => {
+        const newX = x - dx;
+        const newY = y - dy;
+        
+        // Apply same bounds as mouse move
+        const maxOffset = Math.max(w, h) * 0.5;
+        const minX = -maxOffset;
+        const minY = -maxOffset;
+        const maxX = 1600 + maxOffset - w;
+        const maxY = 1600 + maxOffset - h;
+        
+        return [
+          Math.max(minX, Math.min(maxX, newX)),
+          Math.max(minY, Math.min(maxY, newY)),
+          w,
+          h,
+        ];
+      });
+      
       setDrag({ x: touch.clientX, y: touch.clientY });
     }
   };
@@ -96,6 +232,7 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
 
   return (
     <div
+      ref={containerRef}
       style={{
         width: '100%',
         height: 'calc(100vh - 120px)', // fill most of viewport, minus header/color picker
@@ -109,8 +246,29 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
         overflow: 'hidden',
         position: 'relative',
       }}
-      onMouseLeave={onMouseUp}
     >
+      {/* Help overlay */}
+      <div style={{
+        position: 'absolute',
+        top: 8,
+        right: 8,
+        background: 'rgba(0, 0, 0, 0.7)',
+        color: 'white',
+        padding: '6px 10px',
+        borderRadius: 4,
+        fontSize: '11px',
+        zIndex: 10,
+        pointerEvents: 'none',
+        lineHeight: '1.3',
+        maxWidth: '200px'
+      }}>
+        <div><strong>Controls:</strong></div>
+        <div>Alt + scroll: zoom</div>
+        <div>Drag: pan</div>
+        <div>Arrow keys: pan</div>
+        <div>Ctrl/Cmd + +/-: zoom</div>
+        <div>Ctrl/Cmd + 0: reset</div>
+      </div>
       <svg
         ref={svgRef}
         viewBox={viewBox.join(' ')}
@@ -120,12 +278,11 @@ const ZoomablePanSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props)
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
-        onWheel={onWheel}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
       >
-        <SvgMap {...props} />
+        <SvgMap {...svgMapProps} />
       </svg>
     </div>
   );
@@ -147,6 +304,9 @@ const MapSelector: React.FC = () => {
   // States for gates and shrines
   const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
   const [shrineColors, setShrineColors] = useState<{ [id: string]: string }>({});
+  
+  // Ref to store the reset zoom function
+  const resetZoomRef = useRef<(() => void) | null>(null);
 
   // Calculate color counts
   const colorCounts = COLORS.reduce((acc, color) => {
@@ -500,6 +660,26 @@ const MapSelector: React.FC = () => {
           </button>
           
           <button
+            onClick={() => resetZoomRef.current?.()}
+            style={{
+              background: '#17a2b8',
+              color: '#fff',
+              border: 'none',
+              padding: '6px 12px',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '12px',
+              fontWeight: 500,
+              transition: 'background 0.2s',
+              marginLeft: '8px',
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.background = '#138496'}
+            onMouseLeave={(e) => e.currentTarget.style.background = '#17a2b8'}
+          >
+            Reset Zoom
+          </button>
+          
+          <button
             onClick={() => setMapType(mapType === 'svg' ? 'leaflet' : 'svg')}
             style={{
               background: mapType === 'leaflet' ? '#007bff' : '#6c757d',
@@ -659,6 +839,7 @@ const MapSelector: React.FC = () => {
               selectedShrines={selectedShrines}
               shrineColors={shrineColors}
               onShrineClick={handleShrineClick}
+              onResetZoom={(resetFn) => { resetZoomRef.current = resetFn; }}
             />
           ) : (
             <Suspense fallback={
