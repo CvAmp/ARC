@@ -45,11 +45,13 @@ A wrapper component that adds zoom and pan functionality to the SVG map:
 - Manages zoom with mouse wheel
 - Maintains viewBox state for SVG transformations
 
-### SvgMap.tsx (Not Visible)
+### SvgMap.tsx
 The core SVG map component that:
-- Renders the actual map paths
-- Handles tile click events
-- Applies colors to selected tiles
+- Renders the actual map paths programmatically
+- Handles tile click events for tiles, gates, and shrines
+- Applies colors to selected elements
+- Contains all map data (tiles, gates, shrines) as arrays
+- Generates SVG paths dynamically rather than loading static files
 
 ## State Management
 
@@ -59,10 +61,15 @@ The application uses React's built-in state management:
 - `tileColors`: Object mapping tile IDs to color strings
 - `selectedColor`: Currently selected color from palette
 - `viewBox`: SVG viewBox for zoom/pan state
+- `gateColors`: Object mapping gate IDs to color strings
+- `shrineColors`: Object mapping shrine IDs to color strings
+- `colorLabels`: Object mapping colors to user-defined labels
 
 ### Derived State
 - `colorCounts`: Calculated from tileColors for display
 - `selectedTiles`: Array of selected tile IDs
+- `selectedGates`: Array of selected gate IDs
+- `selectedShrines`: Array of selected shrine IDs
 
 ## Data Flow
 
@@ -71,9 +78,9 @@ User Interaction → Event Handler → State Update → Re-render → UI Update
 ```
 
 Example flow for tile selection:
-1. User clicks on map tile
-2. `handleTileClick(id)` is called
-3. `setTileColors` updates state
+1. User clicks on map tile/gate/shrine
+2. `handleTileClick(id)`, `handleGateClick(id)`, or `handleShrineClick(id)` is called
+3. Respective state setter updates the color mapping
 4. Component re-renders with new colors
 5. SVG map displays updated colors
 
@@ -119,6 +126,9 @@ JSON format for saving/loading selections:
 ```typescript
 interface SelectionData {
   tiles: { [id: number]: string };
+  gates?: { [id: number]: string };
+  shrines?: { [id: number]: string };
+  labels?: { [color: string]: string };
   timestamp: string;
   totalTiles: number;
   version: string;
@@ -221,14 +231,16 @@ const MyComponent: React.FC<Props> = ({ prop1, prop2 }) => {
 ## Testing Strategy
 
 ### Manual Testing Checklist
-- [ ] Color selection works
-- [ ] Tile selection/deselection works
-- [ ] Zoom and pan functionality
+- [ ] Color selection works for tiles, gates, and shrines
+- [ ] Tile/gate/shrine selection/deselection works
+- [ ] Zoom and pan functionality (mouse wheel with proper centering)
 - [ ] Export PNG/JPG works
-- [ ] Save/load data works
+- [ ] Save/load data works (includes gates and shrines)
 - [ ] Copy/paste JSON works
 - [ ] Reset functionality works
 - [ ] Mobile touch support
+- [ ] Color labeling system works
+- [ ] Color count display accurate
 
 ### Browser Testing
 - Chrome/Edge (primary)
@@ -243,6 +255,15 @@ const MyComponent: React.FC<Props> = ({ prop1, prop2 }) => {
 npm run build
 ```
 Creates optimized bundle in `dist/` directory.
+
+**Current Build Output (after Leaflet removal):**
+- `index.html` (~0.67 kB)
+- `index-DCIhOKP5.css` (~1.01 kB) - Styles
+- `react-BI5Dw5vt.js` (~46.59 kB) - React framework
+- `utils-B4CzG4On.js` (~202.28 kB) - html2canvas utility
+- `index-3t3akRqD.js` (~529.44 kB) - Main application code
+
+Total bundle size reduced by ~11KB after removing Leaflet dependency.
 
 ### Deployment Targets
 - Netlify (current)
@@ -279,6 +300,24 @@ None required for basic functionality.
 - **Export not working**: Verify `data-export-target` attribute
 - **Performance slow**: Profile with React DevTools
 - **TypeScript errors**: Check type definitions
+- **Zoom behavior diagonal**: Known issue with SVG viewBox zoom centering on mouse cursor
+
+### Known Issues
+
+#### SVG Zoom Behavior
+**Problem**: When using Shift+scroll to zoom, the zoom appears to go diagonally rather than centering properly on the mouse cursor.
+
+**Investigation Status**: 
+- Event handling is correct (preventDefault, stopPropagation)
+- Mathematical calculations for zoom centering are accurate
+- Issue persists despite multiple attempted fixes
+- May be related to browser rendering of SVG viewBox transformations
+
+**Potential Solutions Being Explored**:
+- Alternative zoom calculation methods
+- CSS transform-based zoom instead of viewBox
+- Different event listener attachment strategies
+- Browser-specific workarounds
 
 ### Debug Tools
 - React Developer Tools
@@ -331,6 +370,11 @@ None required for basic functionality.
 - `react` - UI framework
 - `html2canvas` - Image export
 - `react-router-dom` - Routing (minimal usage)
+
+**Recently Removed:**
+- `leaflet` - Previously used for alternative map implementation
+- `react-leaflet` - React wrapper for Leaflet (removed in favor of pure SVG approach)
+- `@types/leaflet` - TypeScript definitions for Leaflet
 
 ### Useful Tools
 - React DevTools
