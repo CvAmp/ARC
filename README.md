@@ -23,7 +23,7 @@ A React-based interactive map application that allows users to select and color-
 
 ## 🚀 Live Demo
 
-Visit the live application: [https://luminous-haupia-86e19d.netlify.app](https://luminous-haupia-86e19d.netlify.app)
+Visit the live application: [https://arcmap.netlify.app/](https://arcmap.netlify.app/)
 
 ## 🛠️ Local Development
 
