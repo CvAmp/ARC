@@ -142,8 +142,8 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
     }
 
     const handleWheel = (e: WheelEvent) => {
-      // Only zoom when Alt is held down
-      if (!e.altKey) {
+      // Only zoom when Shift is held down
+      if (!e.shiftKey) {
         return;
       }
       
@@ -245,6 +245,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         border: '1px solid #bbb',
         overflow: 'hidden',
         position: 'relative',
+        touchAction: 'none', // Prevent default touch behaviors like scrolling
       }}
     >
       {/* Help overlay */}
@@ -263,7 +264,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         maxWidth: '200px'
       }}>
         <div><strong>Controls:</strong></div>
-        <div>Alt + scroll: zoom</div>
+        <div>Shift + scroll: zoom</div>
         <div>Drag: pan</div>
         <div>Arrow keys: pan</div>
         <div>Ctrl/Cmd + +/-: zoom</div>
