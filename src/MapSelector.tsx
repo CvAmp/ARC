@@ -267,7 +267,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         <div>Ctrl/Cmd + +/-: zoom</div>
         <div>Ctrl/Cmd + 0: reset</div>
       </div>
-      <svg
+      // <svg
         ref={svgRef}
         viewBox={viewBox.join(' ')}
         width="100%"
@@ -281,7 +281,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         onTouchEnd={onTouchEnd}
       >
         <SvgMap {...svgMapProps} />
-      </svg>
+      // </svg>
     </div>
   );
 };
