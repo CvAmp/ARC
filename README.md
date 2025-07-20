@@ -4,13 +4,22 @@ A React-based interactive map application that allows users to select and color-
 
 ## 🌟 Features
 
-- **Interactive Map Selection**: Click on map regions to select and color them
+- **Interactive Map Selection**: Click on map tiles, gates, and shrines to select and color them
+- **Multi-Element Support**: Select and color different types of map elements (tiles, gates, shrines)
 - **Multi-Color Support**: Choose from 12 different colors for categorization
+- **Color Labeling**: Add custom labels to colors for better organization
 - **Zoom & Pan**: Navigate the map with mouse wheel zoom and click-drag panning
 - **Export Options**: Save your selections as PNG or JPG images
 - **Data Management**: Save, load, copy, and paste selection data as JSON
 - **Real-time Statistics**: See color usage counts in the toolbar
 - **Responsive Design**: Works on desktop and mobile devices
+
+## ✨ Recent Improvements
+
+- **Simplified Architecture**: Streamlined to use a single, optimized SVG map implementation
+- **Reduced Bundle Size**: Removed unnecessary dependencies for faster loading
+- **Enhanced Element Support**: Added support for gates and shrines in addition to tiles
+- **Improved Labeling**: Custom color labels for better organization and sharing
 
 ## 🚀 Live Demo
 
@@ -55,19 +64,21 @@ npm run dev
 ### Basic Selection
 
 1. **Choose a Color**: Click on any color circle in the top toolbar to select it
-2. **Select Map Regions**: Click on any region of the map to color it with your selected color
-3. **Toggle Selection**: Click on an already-colored region with the same color to deselect it
-4. **Change Colors**: Select a different color and click on regions to change their color
+2. **Select Map Elements**: Click on any tile, gate, or shrine on the map to color it with your selected color
+3. **Toggle Selection**: Click on an already-colored element with the same color to deselect it
+4. **Change Colors**: Select a different color and click on elements to change their color
+5. **Add Labels**: Click on a color's label area to add custom text descriptions
 
 ### Navigation
 
-- **Zoom**: Use mouse wheel to zoom in/out
+- **Zoom**: Use Shift + mouse wheel to zoom in/out (centers on mouse cursor)
 - **Pan**: Click and drag to move around the map
-- **Reset View**: Refresh the page to return to the original view
+- **Reset Zoom**: Click the "Reset Zoom" button to return to the original view
 
 ### Color Management
 
-- **Color Counts**: Numbers below each color show how many regions are using that color
+- **Color Counts**: Numbers below each color show how many elements are using that color
+- **Color Labels**: Click on the label area below colors to add descriptive text
 - **Reset All**: Click the "Reset All" button to clear all selections
 
 ### Export & Save
@@ -92,26 +103,26 @@ npm run dev
 
 ### Built With
 
-- **React 19** - UI framework
-- **TypeScript** - Type safety
-- **Vite** - Build tool and development server
-- **html2canvas** - Image export functionality
-- **Custom SVG Map** - Interactive map component
+- **React 19** - Modern UI framework with latest features
+- **TypeScript** - Type safety and better development experience
+- **Vite** - Fast build tool and development server
+- **html2canvas** - High-quality image export functionality
+- **Pure SVG Implementation** - Custom-built interactive map (no external map libraries)
 
 ### Project Structure
 
 ```
 src/
-├── App.tsx              # Main application component
-├── MapView.tsx          # Map view wrapper
-├── MapSelector.tsx      # Main map selector component
-├── SvgMap.tsx          # SVG map component (not shown)
-├── data/
-│   └── sample.ts       # Sample data (objectives and zones)
-└── styles/
-    ├── App.css         # Component styles
-    └── index.css       # Global styles
+├── App.tsx              # Application router and main structure
+├── MapView.tsx          # Map view wrapper component
+├── MapSelector.tsx      # Main interactive map component
+├── SvgMap.tsx          # Programmatic SVG map renderer
+├── assets/             # Static assets (minimal usage)
+├── App.css             # Component-specific styles
+└── index.css           # Global styles and CSS variables
 ```
+
+*Note: For detailed technical documentation, see [DEVELOPMENT.md](DEVELOPMENT.md)*
 
 ### Data Format
 
@@ -124,33 +135,33 @@ Selection data is stored in JSON format:
     "2": "#f0b0b0",
     "15": "#b0b0f0"
   },
-  "timestamp": "2024-01-15T10:30:00.000Z",
-  "totalTiles": 3,
+  "gates": {
+    "5": "#e0a0a0"
+  },
+  "shrines": {
+    "12": "#a0a0e0"
+  },
+  "labels": {
+    "#a0e0a0": "Forest Areas",
+    "#f0b0b0": "Desert Regions"
+  },
+  "timestamp": "2025-01-15T10:30:00.000Z",
+  "totalTiles": 5,
   "version": "1.0"
 }
 ```
 
 ## 🎨 Customization
 
-### Adding New Colors
+### Quick Customizations
 
-Edit the `COLORS` array in `src/MapSelector.tsx`:
+Want to customize the map for your needs? Here are the most common modifications:
 
-```typescript
-const COLORS = [
-  "#e0e0e0", // Light gray
-  "#c0c0c0", // Medium gray
-  "#a0e0a0", // Light green
-  // Add your custom colors here
-];
-```
+**Adding New Colors**: See [DEVELOPMENT.md](DEVELOPMENT.md#adding-new-colors) for instructions on extending the color palette.
 
-### Modifying the Map
+**Using Your Own Map**: The application can be adapted to work with any SVG-based map. See [DEVELOPMENT.md](DEVELOPMENT.md#adding-new-map-types) for technical details.
 
-The map is defined in `src/SvgMap.tsx`. You can:
-- Replace the SVG with your own map
-- Modify tile definitions and boundaries
-- Adjust styling and interactions
+**Styling Changes**: Modify colors, fonts, and layout through the CSS files in the `src/` directory.
 
 ## 🐛 Troubleshooting
 
@@ -159,7 +170,10 @@ The map is defined in `src/SvgMap.tsx`. You can:
 1. **Map not loading**: Ensure all dependencies are installed with `npm install`
 2. **Export not working**: Check browser permissions for file downloads
 3. **Clipboard operations failing**: Ensure you're using HTTPS or localhost
-4. **Performance issues**: Try reducing the map complexity or zoom level
+4. **Zoom feels off**: Use Shift + scroll wheel for zoom (known issue: may appear slightly diagonal)
+5. **Performance on large maps**: Consider reducing zoom level or using fewer simultaneous selections
+
+For technical troubleshooting and development issues, see [DEVELOPMENT.md](DEVELOPMENT.md#debugging-tips).
 
 ### Browser Compatibility
 
@@ -174,7 +188,9 @@ This project is open source and available under the [MIT License](LICENSE).
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! This project follows standard open-source contribution practices.
+
+### Quick Start for Contributors
 
 1. Fork the project
 2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
@@ -182,6 +198,13 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 4. Push to the branch (`git push origin feature/AmazingFeature`)
 5. Open a Pull Request
 
+### Development Setup
+
+For detailed development setup, code standards, and architecture information, please see [DEVELOPMENT.md](DEVELOPMENT.md).
+
 ## 📞 Support
 
-If you encounter any issues or have questions, please open an issue on the GitHub repository.
+- **General Questions**: Open an issue on the GitHub repository
+- **Bug Reports**: Please include browser version and steps to reproduce
+- **Feature Requests**: Describe your use case and proposed solution
+- **Technical Issues**: Check [DEVELOPMENT.md](DEVELOPMENT.md) first, then open an issue
