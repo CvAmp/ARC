@@ -8,8 +8,6 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          // Separate Leaflet into its own chunk since it's large
-          leaflet: ['leaflet', 'react-leaflet'],
           // Separate React dependencies
           react: ['react', 'react-dom', 'react-router-dom'],
           // Separate utility libraries

@@ -1,9 +1,6 @@
-import React, { useState, useRef, Suspense, lazy } from "react";
+import React, { useState, useRef } from "react";
 import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
-
-// Lazy load LeafletMap for code splitting
-const LeafletMap = lazy(() => import("./LeafletMap"));
 
 // --- Zoomable/Pannable SVG Map Wrapper ---
 interface ZoomablePanSvgMapProps extends React.ComponentProps<typeof SvgMap> {
@@ -300,7 +297,7 @@ const MapSelector: React.FC = () => {
   const [selectedColor, setSelectedColor] = useState<string>(COLORS[2]);
   const [colorLabels, setColorLabels] = useState<{ [color: string]: string }>({});
   const [editingLabel, setEditingLabel] = useState<string | null>(null);
-  const [mapType, setMapType] = useState<'svg' | 'leaflet'>('svg');
+
   
   // States for gates and shrines
   const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
@@ -680,25 +677,6 @@ const MapSelector: React.FC = () => {
             Reset Zoom
           </button>
           
-          <button
-            onClick={() => setMapType(mapType === 'svg' ? 'leaflet' : 'svg')}
-            style={{
-              background: mapType === 'leaflet' ? '#007bff' : '#6c757d',
-              color: '#fff',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 500,
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = mapType === 'leaflet' ? '#0056b3' : '#5a6268'}
-            onMouseLeave={(e) => e.currentTarget.style.background = mapType === 'leaflet' ? '#007bff' : '#6c757d'}
-          >
-            {mapType === 'svg' ? '🗺️ Leaflet' : '📊 SVG'}
-          </button>
-          
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => exportAsImage('png')}
@@ -827,54 +805,20 @@ const MapSelector: React.FC = () => {
         // Add data attribute for export targeting
       }}>
         <div data-export-target style={{ width: '100%', height: '100%' }}>
-          {mapType === 'svg' ? (
-            <ZoomablePanSvgMap
-              selectedTiles={selectedTiles}
-              selectedColor={selectedColor}
-              tileColors={tileColors}
-              colorLabels={colorLabels}
-              onTileClick={handleTileClick}
-              selectedGates={selectedGates}
-              gateColors={gateColors}
-              onGateClick={handleGateClick}
-              selectedShrines={selectedShrines}
-              shrineColors={shrineColors}
-              onShrineClick={handleShrineClick}
-              onResetZoom={(resetFn) => { resetZoomRef.current = resetFn; }}
-            />
-          ) : (
-            <Suspense fallback={
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                alignItems: 'center', 
-                height: '100%', 
-                color: '#fff',
-                background: '#23272f'
-              }}>
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '18px', marginBottom: '8px' }}>🗺️</div>
-                  <div>Loading Leaflet Map...</div>
-                </div>
-              </div>
-            }>
-              <LeafletMap
-                selectedTiles={selectedTiles}
-                selectedColor={selectedColor}
-                tileColors={tileColors}
-                colorLabels={colorLabels}
-                onTileClick={handleTileClick}
-                selectedGates={selectedGates}
-                gateColors={gateColors}
-                onGateClick={handleGateClick}
-                selectedShrines={selectedShrines}
-                shrineColors={shrineColors}
-                onShrineClick={handleShrineClick}
-                width={window.innerWidth}
-                height={window.innerHeight - 72}
-              />
-            </Suspense>
-          )}
+          <ZoomablePanSvgMap
+            selectedTiles={selectedTiles}
+            selectedColor={selectedColor}
+            tileColors={tileColors}
+            colorLabels={colorLabels}
+            onTileClick={handleTileClick}
+            selectedGates={selectedGates}
+            gateColors={gateColors}
+            onGateClick={handleGateClick}
+            selectedShrines={selectedShrines}
+            shrineColors={shrineColors}
+            onShrineClick={handleShrineClick}
+            onResetZoom={(resetFn) => { resetZoomRef.current = resetFn; }}
+          />
         </div>
       </div>
       
