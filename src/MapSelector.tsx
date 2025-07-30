@@ -266,7 +266,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         maxWidth: '200px'
       }}>
         <div><strong>Controls:</strong></div>
-        <div>Shift + scroll: zoom</div>
+        <div>Scroll: zoom</div>
         <div>Drag: pan</div>
         <div>Arrow keys: pan</div>
         <div>Ctrl/Cmd + +/-: zoom</div>
@@ -291,9 +291,9 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
   );
 };
 
-// Expanded color palette (12 varied colors)
+// Rich color palette with named colors
 const COLORS = [
-  "#e0e0e0", "#c0c0c0", "#a0e0a0", "#f0b0b0", "#b0b0f0", "#ffe066", "#ff8c42", "#6ec6ff", "#ff6f91", "#7fffd4", "#bada55", "#8d5524"
+  "#DC143C", "#DAA520", "#008080", "#808000", "#8B4513", "#483D8B", "#CD5C5C", "#8FBC8F", "#FF8C00", "#4682B4", "#8B008B", "#CD853F"
 ];
 
 const MapSelector: React.FC = () => {
