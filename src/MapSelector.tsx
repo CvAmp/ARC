@@ -139,40 +139,45 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
     }
 
     const handleWheel = (e: WheelEvent) => {
-      // Only zoom when Shift is held down
-      if (!e.shiftKey) {
-        return;
-      }
-      
-      // This is the key change: explicitly prevent default browser scroll
+      // Consume wheel events so the page doesn't scroll and handle zoom/pan correctly
       e.preventDefault();
-      e.stopPropagation(); // Stop event from bubbling up
+      e.stopPropagation();
       
       if (!svgRef.current) return;
+      
+      // Mouse position relative to the SVG
       const rect = svgRef.current.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
       
+      // Determine zoom factor (scroll up -> zoom in, scroll down -> zoom out)
       const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
       
       setViewBox(([x, y, w, h]) => {
-        const newW = w * zoomFactor;
-        const newH = h * zoomFactor;
-        
+        // Clamp new width/height to min/max zoom
         const minZoom = 100;
         const maxZoom = 3200;
+        const rawW = w * zoomFactor;
+        const rawH = h * zoomFactor;
+        const newW = Math.min(Math.max(rawW, minZoom), maxZoom);
+        const newH = Math.min(Math.max(rawH, minZoom), maxZoom);
         
-        if (newW < minZoom || newH < minZoom || newW > maxZoom || newH > maxZoom) {
-          return [x, y, w, h];
-        }
-        
-        // Convert mouse screen coordinates to SVG world coordinates
+        // World coordinates of the mouse before zoom
         const worldX = x + (mouseX / rect.width) * w;
         const worldY = y + (mouseY / rect.height) * h;
         
-        // Calculate the new top-left corner to keep the world point under the mouse
-        const newX = worldX - (mouseX / rect.width) * newW;
-        const newY = worldY - (mouseY / rect.height) * newH;
+        // Position the new viewBox so that the mouse stays anchored
+        let newX = worldX - (mouseX / rect.width) * newW;
+        let newY = worldY - (mouseY / rect.height) * newH;
+        
+        // Apply the same loose bounds used for panning to prevent drift
+        const maxOffset = Math.max(newW, newH) * 0.5;
+        const minX = -maxOffset;
+        const minY = -maxOffset;
+        const maxX = 1600 + maxOffset - newW;
+        const maxY = 1600 + maxOffset - newH;
+        newX = Math.min(Math.max(newX, minX), maxX);
+        newY = Math.min(Math.max(newY, minY), maxY);
         
         return [newX, newY, newW, newH];
       });
