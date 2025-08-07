@@ -4196,7 +4196,7 @@ const SvgMap: React.FC<SvgMapProps> = ({
             <path
               d={tile.d}
               fill={fill}
-              stroke={isSelected ? '#fff' : '#333'}
+              stroke={isSelected ? '#000' : '#333'}
               strokeWidth={isSelected ? 3 : 2}
               style={{ cursor: 'pointer', transition: 'stroke 0.2s, stroke-width 0.2s' }}
               onClick={() => onTileClick(tile.id)}
