@@ -1,291 +1,35 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
 
-// --- Zoomable/Pannable SVG Map Wrapper ---
-interface ZoomablePanSvgMapProps extends React.ComponentProps<typeof SvgMap> {
-  onResetZoom?: (resetFn: () => void) => void;
-}
+// --- Static SVG Map Wrapper ---
+interface StaticSvgMapProps extends React.ComponentProps<typeof SvgMap> {}
 
-const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
-  // Extract onResetZoom from props
-  const { onResetZoom, ...svgMapProps } = props;
-  
-  // Responsive SVG sizing: fill parent, viewBox always [0,0,1600,1600]
-  const svgRef = useRef<SVGSVGElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 8192, 8192]);
-  const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
-
-  // Reset zoom function
-  const resetZoom = () => {
-    setViewBox([0, 0, 8192, 8192]);
-  };
-
-  // Expose reset function to parent
-  React.useEffect(() => {
-    if (onResetZoom) {
-      onResetZoom(resetZoom);
-    }
-  }, [onResetZoom]);
-
-  // Keyboard controls
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (!svgRef.current) return;
-      
-      const panAmount = viewBox[2] * 0.1; // Pan 10% of current view
-      
-      switch (e.key) {
-        case 'ArrowUp':
-          e.preventDefault();
-          setViewBox(([x, y, w, h]) => [x, y - panAmount, w, h]);
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setViewBox(([x, y, w, h]) => [x, y + panAmount, w, h]);
-          break;
-        case 'ArrowLeft':
-          e.preventDefault();
-          setViewBox(([x, y, w, h]) => [x - panAmount, y, w, h]);
-          break;
-        case 'ArrowRight':
-          e.preventDefault();
-          setViewBox(([x, y, w, h]) => [x + panAmount, y, w, h]);
-          break;
-        case '=':
-        case '+':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            const zoomFactor = 0.9;
-            const centerX = viewBox[0] + viewBox[2] / 2;
-            const centerY = viewBox[1] + viewBox[3] / 2;
-            setViewBox(([x, y, w, h]) => {
-              const newW = w * zoomFactor;
-              const newH = h * zoomFactor;
-              if (newW < 500 || newH < 500) return [x, y, w, h];
-              return [centerX - newW / 2, centerY - newH / 2, newW, newH];
-            });
-          }
-          break;
-        case '-':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            const zoomFactor = 1.1;
-            const centerX = viewBox[0] + viewBox[2] / 2;
-            const centerY = viewBox[1] + viewBox[3] / 2;
-            setViewBox(([x, y, w, h]) => {
-              const newW = w * zoomFactor;
-              const newH = h * zoomFactor;
-              if (newW > 16384 || newH > 16384) return [x, y, w, h];
-              return [centerX - newW / 2, centerY - newH / 2, newW, newH];
-            });
-          }
-          break;
-        case '0':
-          if (e.ctrlKey || e.metaKey) {
-            e.preventDefault();
-            resetZoom();
-          }
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [viewBox, resetZoom]);
-
-  // Mouse/touch pan handlers
-  const onMouseDown = (e: React.MouseEvent) => {
-    if (svgRef.current) {
-      setDrag({ x: e.clientX, y: e.clientY });
-    }
-  };
-  const onMouseMove = (e: React.MouseEvent) => {
-    if (drag && svgRef.current) {
-      const rect = svgRef.current.getBoundingClientRect();
-      const dx = ((e.clientX - drag.x) / rect.width) * viewBox[2];
-      const dy = ((e.clientY - drag.y) / rect.height) * viewBox[3];
-      
-      setViewBox(([x, y, w, h]) => {
-        const newX = x - dx;
-        const newY = y - dy;
-        
-        // Apply some loose bounds to prevent panning too far
-        const maxOffset = Math.max(w, h) * 0.5; // Allow panning half a view beyond edges
-        const minX = -maxOffset;
-        const minY = -maxOffset;
-        const maxX = 8192 + maxOffset - w;
-        const maxY = 8192 + maxOffset - h;
-        
-        return [
-          Math.max(minX, Math.min(maxX, newX)),
-          Math.max(minY, Math.min(maxY, newY)),
-          w,
-          h,
-        ];
-      });
-      
-      setDrag({ x: e.clientX, y: e.clientY });
-    }
-  };
-  const onMouseUp = () => setDrag(null);
-
-  // Manually handle wheel event to ensure preventDefault works
-  React.useEffect(() => {
-    const containerElement = containerRef.current;
-    if (!containerElement) {
-      return;
-    }
-
-    const handleWheel = (e: WheelEvent) => {
-      // Consume wheel events so the page doesn't scroll and handle zoom/pan correctly
-      e.preventDefault();
-      e.stopPropagation();
-      
-      if (!svgRef.current) return;
-      
-      // Mouse position relative to the SVG
-      const rect = svgRef.current.getBoundingClientRect();
-      const mouseX = e.clientX - rect.left;
-      const mouseY = e.clientY - rect.top;
-      
-      // Determine zoom factor (scroll up -> zoom in, scroll down -> zoom out)
-      const zoomFactor = e.deltaY < 0 ? 0.9 : 1.1;
-      
-      setViewBox(([x, y, w, h]) => {
-        // Clamp new width/height to min/max zoom
-        const minZoom = 500;  // Minimum zoom level (more zoomed in)
-        const maxZoom = 16384; // Maximum zoom level (more zoomed out)
-        const rawW = w * zoomFactor;
-        const rawH = h * zoomFactor;
-        const newW = Math.min(Math.max(rawW, minZoom), maxZoom);
-        const newH = Math.min(Math.max(rawH, minZoom), maxZoom);
-        
-        // World coordinates of the mouse before zoom
-        const worldX = x + (mouseX / rect.width) * w;
-        const worldY = y + (mouseY / rect.height) * h;
-        
-        // Position the new viewBox so that the mouse stays anchored
-        let newX = worldX - (mouseX / rect.width) * newW;
-        let newY = worldY - (mouseY / rect.height) * newH;
-        
-        // Apply the same loose bounds used for panning to prevent drift
-        const maxOffset = Math.max(newW, newH) * 0.5;
-        const minX = -maxOffset;
-        const minY = -maxOffset;
-        const maxX = 8192 + maxOffset - newW;
-        const maxY = 8192 + maxOffset - newH;
-        newX = Math.min(Math.max(newX, minX), maxX);
-        newY = Math.min(Math.max(newY, minY), maxY);
-        
-        return [newX, newY, newW, newH];
-      });
-    };
-
-    // Add the event listener with passive: false to allow preventDefault
-    containerElement.addEventListener('wheel', handleWheel, { passive: false });
-
-    return () => {
-      containerElement.removeEventListener('wheel', handleWheel);
-    };
-  }, [viewBox, setViewBox]);
-
-  // Touch handlers for mobile support
-  const onTouchStart = (e: React.TouchEvent) => {
-    if (e.touches.length === 1) {
-      const touch = e.touches[0];
-      setDrag({ x: touch.clientX, y: touch.clientY });
-    }
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
-    if (drag && e.touches.length === 1 && svgRef.current) {
-      const touch = e.touches[0];
-      const rect = svgRef.current.getBoundingClientRect();
-      const dx = ((touch.clientX - drag.x) / rect.width) * viewBox[2];
-      const dy = ((touch.clientY - drag.y) / rect.height) * viewBox[3];
-      
-      setViewBox(([x, y, w, h]) => {
-        const newX = x - dx;
-        const newY = y - dy;
-        
-        // Apply same bounds as mouse move
-        const maxOffset = Math.max(w, h) * 0.5;
-        const minX = -maxOffset;
-        const minY = -maxOffset;
-        const maxX = 8192 + maxOffset - w;
-        const maxY = 8192 + maxOffset - h;
-        
-        return [
-          Math.max(minX, Math.min(maxX, newX)),
-          Math.max(minY, Math.min(maxY, newY)),
-          w,
-          h,
-        ];
-      });
-      
-      setDrag({ x: touch.clientX, y: touch.clientY });
-    }
-  };
-
-  const onTouchEnd = () => setDrag(null);
-
+const StaticSvgMap: React.FC<StaticSvgMapProps> = (props) => {
   return (
     <div
-      ref={containerRef}
       style={{
         width: '100%',
-        height: 'calc(100vh - 120px)', // fill most of viewport, minus header/color picker
-        minHeight: 400,
+        height: 'calc(100vh - 80px)', // Increased height, reduced top margin
+        minHeight: 600, // Increased minimum height
         maxHeight: '100vh',
-        cursor: drag ? 'grabbing' : 'grab',
         userSelect: 'none',
         background: '#faf9f6',
         borderRadius: 8,
         border: '1px solid #bbb',
         overflow: 'hidden',
         position: 'relative',
-        touchAction: 'none', // Prevent default touch behaviors like scrolling
+        margin: '0 2vw', // Small side margins for different resolutions
+        padding: '1vh 0', // Small vertical padding
       }}
     >
-      {/* Help overlay */}
-      <div style={{
-        position: 'absolute',
-        top: 8,
-        right: 8,
-        background: 'rgba(0, 0, 0, 0.7)',
-        color: 'white',
-        padding: '6px 10px',
-        borderRadius: 4,
-        fontSize: '11px',
-        zIndex: 10,
-        pointerEvents: 'none',
-        lineHeight: '1.3',
-        maxWidth: '200px'
-      }}>
-        <div><strong>Controls:</strong></div>
-        <div>Scroll: zoom</div>
-        <div>Drag: pan</div>
-        <div>Arrow keys: pan</div>
-        <div>Ctrl/Cmd + +/-: zoom</div>
-        <div>Ctrl/Cmd + 0: reset</div>
-      </div>
       <svg
-        ref={svgRef}
-        viewBox={viewBox.join(' ')}
+        viewBox="0 0 8192 8192" // Fixed viewBox showing entire map
         width="100%"
         height="100%"
         style={{ display: 'block', background: 'none' }}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
       >
-        <SvgMap {...svgMapProps} />
+        <SvgMap {...props} />
       </svg>
     </div>
   );
@@ -307,9 +51,6 @@ const MapSelector: React.FC = () => {
   // States for gates and shrines
   const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
   const [shrineColors, setShrineColors] = useState<{ [id: string]: string }>({});
-  
-  // Ref to store the reset zoom function
-  const resetZoomRef = useRef<(() => void) | null>(null);
 
   // Calculate color counts
   const colorCounts = COLORS.reduce((acc, color) => {
@@ -662,26 +403,6 @@ const MapSelector: React.FC = () => {
             Reset All
           </button>
           
-          <button
-            onClick={() => resetZoomRef.current?.()}
-            style={{
-              background: '#17a2b8',
-              color: '#fff',
-              border: 'none',
-              padding: '6px 12px',
-              borderRadius: '4px',
-              cursor: 'pointer',
-              fontSize: '12px',
-              fontWeight: 500,
-              transition: 'background 0.2s',
-              marginLeft: '8px',
-            }}
-            onMouseEnter={(e) => e.currentTarget.style.background = '#138496'}
-            onMouseLeave={(e) => e.currentTarget.style.background = '#17a2b8'}
-          >
-            Reset Zoom
-          </button>
-          
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <button
               onClick={() => exportAsImage('png')}
@@ -801,16 +522,16 @@ const MapSelector: React.FC = () => {
       </div>
       <div style={{
         position: 'absolute',
-        top: 72,
+        top: 60, // Reduced from 72px
         left: 0,
         width: '100vw',
-        height: 'calc(100vh - 72px)',
+        height: 'calc(100vh - 60px)', // Reduced top offset
         zIndex: 1,
         background: '#23272f',
         // Add data attribute for export targeting
       }}>
         <div data-export-target style={{ width: '100%', height: '100%' }}>
-          <ZoomablePanSvgMap
+          <StaticSvgMap
             selectedTiles={selectedTiles}
             selectedColor={selectedColor}
             tileColors={tileColors}
@@ -822,7 +543,6 @@ const MapSelector: React.FC = () => {
             selectedShrines={selectedShrines}
             shrineColors={shrineColors}
             onShrineClick={handleShrineClick}
-            onResetZoom={(resetFn) => { resetZoomRef.current = resetFn; }}
           />
         </div>
       </div>
