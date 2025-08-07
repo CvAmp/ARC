@@ -14,12 +14,12 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
   // Responsive SVG sizing: fill parent, viewBox always [0,0,1600,1600]
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 1600, 1600]);
+  const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 8192, 8192]);
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
   // Reset zoom function
   const resetZoom = () => {
-    setViewBox([0, 0, 1600, 1600]);
+    setViewBox([0, 0, 8192, 8192]);
   };
 
   // Expose reset function to parent
@@ -63,7 +63,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
             setViewBox(([x, y, w, h]) => {
               const newW = w * zoomFactor;
               const newH = h * zoomFactor;
-              if (newW < 100 || newH < 100) return [x, y, w, h];
+              if (newW < 500 || newH < 500) return [x, y, w, h];
               return [centerX - newW / 2, centerY - newH / 2, newW, newH];
             });
           }
@@ -77,7 +77,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
             setViewBox(([x, y, w, h]) => {
               const newW = w * zoomFactor;
               const newH = h * zoomFactor;
-              if (newW > 3200 || newH > 3200) return [x, y, w, h];
+              if (newW > 16384 || newH > 16384) return [x, y, w, h];
               return [centerX - newW / 2, centerY - newH / 2, newW, newH];
             });
           }
@@ -115,8 +115,8 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         const maxOffset = Math.max(w, h) * 0.5; // Allow panning half a view beyond edges
         const minX = -maxOffset;
         const minY = -maxOffset;
-        const maxX = 1600 + maxOffset - w;
-        const maxY = 1600 + maxOffset - h;
+        const maxX = 8192 + maxOffset - w;
+        const maxY = 8192 + maxOffset - h;
         
         return [
           Math.max(minX, Math.min(maxX, newX)),
@@ -155,8 +155,8 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
       
       setViewBox(([x, y, w, h]) => {
         // Clamp new width/height to min/max zoom
-        const minZoom = 100;
-        const maxZoom = 3200;
+        const minZoom = 500;  // Minimum zoom level (more zoomed in)
+        const maxZoom = 16384; // Maximum zoom level (more zoomed out)
         const rawW = w * zoomFactor;
         const rawH = h * zoomFactor;
         const newW = Math.min(Math.max(rawW, minZoom), maxZoom);
@@ -174,8 +174,8 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         const maxOffset = Math.max(newW, newH) * 0.5;
         const minX = -maxOffset;
         const minY = -maxOffset;
-        const maxX = 1600 + maxOffset - newW;
-        const maxY = 1600 + maxOffset - newH;
+        const maxX = 8192 + maxOffset - newW;
+        const maxY = 8192 + maxOffset - newH;
         newX = Math.min(Math.max(newX, minX), maxX);
         newY = Math.min(Math.max(newY, minY), maxY);
         
@@ -215,8 +215,8 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         const maxOffset = Math.max(w, h) * 0.5;
         const minX = -maxOffset;
         const minY = -maxOffset;
-        const maxX = 1600 + maxOffset - w;
-        const maxY = 1600 + maxOffset - h;
+        const maxX = 8192 + maxOffset - w;
+        const maxY = 8192 + maxOffset - h;
         
         return [
           Math.max(minX, Math.min(maxX, newX)),
@@ -272,7 +272,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         <div>Ctrl/Cmd + +/-: zoom</div>
         <div>Ctrl/Cmd + 0: reset</div>
       </div>
-      // <svg
+      <svg
         ref={svgRef}
         viewBox={viewBox.join(' ')}
         width="100%"
@@ -286,7 +286,7 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         onTouchEnd={onTouchEnd}
       >
         <SvgMap {...svgMapProps} />
-      // </svg>
+      </svg>
     </div>
   );
 };
