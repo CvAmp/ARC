@@ -3,9 +3,7 @@ import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
 
 // --- Static SVG Map Wrapper ---
-interface StaticSvgMapProps extends React.ComponentProps<typeof SvgMap> {}
-
-const StaticSvgMap: React.FC<StaticSvgMapProps> = (props) => {
+const StaticSvgMap: React.FC<React.ComponentProps<typeof SvgMap>> = (props) => {
   return (
     <div
       style={{
