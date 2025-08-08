@@ -827,37 +827,39 @@ const MapSelector: React.FC = () => {
         </div>
       </div>
       
-      {/* Credits Section */}
+      {/* Credits Banner */}
       <div style={{
         position: 'fixed',
-        bottom: 8,
-        right: 8,
+        bottom: 0,
+        left: 0,
+        width: '100%',
         background: 'rgba(35, 39, 47, 0.95)',
         color: '#fff',
-        padding: '8px 12px',
-        borderRadius: '6px',
+        padding: '6px 16px',
         fontSize: '11px',
         fontFamily: 'monospace',
         zIndex: 1000,
-        border: '1px solid rgba(255, 255, 255, 0.1)',
-        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+        border: 'none',
+        borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+        boxShadow: '0 -2px 8px rgba(0, 0, 0, 0.3)',
         backdropFilter: 'blur(4px)',
-        textAlign: 'right',
-        lineHeight: '1.3',
-        maxWidth: '200px'
+        textAlign: 'center',
+        lineHeight: '1.2',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '12px'
       }}>
-        <div style={{ fontWeight: 'bold', fontSize: '10px', opacity: 0.8, marginBottom: '2px' }}>
-          Credits
-        </div>
-        <div style={{ marginBottom: '1px' }}>
-          Josh Strunk aka Cvamp
-        </div>
-        <div style={{ marginBottom: '1px' }}>
-          Wan
-        </div>
-        <div style={{ fontSize: '9px', opacity: 0.6, marginTop: '2px' }}>
+        <span style={{ fontWeight: 'bold', fontSize: '10px', opacity: 0.8 }}>
+          Credits:
+        </span>
+        <span>Josh Strunk aka Cvamp</span>
+        <span>•</span>
+        <span>Wan</span>
+        <span>•</span>
+        <span style={{ fontSize: '9px', opacity: 0.6 }}>
           World 35
-        </div>
+        </span>
       </div>
     </div>
   );
