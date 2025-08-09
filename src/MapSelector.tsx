@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
 
@@ -18,16 +18,16 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
   // Reset zoom function
-  const resetZoom = () => {
+  const resetZoom = useCallback(() => {
     setViewBox([0, 0, 8192, 8192]);
-  };
+  }, []);
 
   // Expose reset function to parent
   React.useEffect(() => {
     if (onResetZoom) {
       onResetZoom(resetZoom);
     }
-  }, [onResetZoom]);
+  }, [onResetZoom, resetZoom]);
 
   // Keyboard controls
   React.useEffect(() => {
