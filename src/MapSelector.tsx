@@ -11,15 +11,16 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
   // Extract onResetZoom from props
   const { onResetZoom, ...svgMapProps } = props;
   
-  // Responsive SVG sizing: fill parent, viewBox always [0,0,1600,1600]
+  // Responsive SVG sizing: fill parent, viewBox centered on actual map content
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 8192, 8192]);
+  // Center the viewBox on the actual map content bounds (x: -177.38 to 6981.33, y: 0 to 7128.44)
+  const [viewBox, setViewBox] = useState<[number, number, number, number]>([-694, -532, 8192, 8192]);
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
   // Reset zoom function
   const resetZoom = () => {
-    setViewBox([0, 0, 8192, 8192]);
+    setViewBox([-694, -532, 8192, 8192]);
   };
 
   // Expose reset function to parent
