@@ -11,15 +11,31 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
   // Extract onResetZoom from props
   const { onResetZoom, ...svgMapProps } = props;
   
-  // Responsive SVG sizing: fill parent, viewBox always [0,0,1600,1600]
+  // Responsive SVG sizing: fill parent, viewBox showing actual map content
   const svgRef = useRef<SVGSVGElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const [viewBox, setViewBox] = useState<[number, number, number, number]>([0, 0, 8192, 8192]);
+  
+  // Actual map content bounds: x: -177.38 to 6981.33, y: 0 to 7128.44
+  const CONTENT_MIN_X = -177.38;
+  const CONTENT_MAX_X = 6981.33;
+  const CONTENT_MIN_Y = 0;
+  const CONTENT_MAX_Y = 7128.44;
+  const CONTENT_WIDTH = CONTENT_MAX_X - CONTENT_MIN_X; // 7158.71
+  const CONTENT_HEIGHT = CONTENT_MAX_Y - CONTENT_MIN_Y; // 7128.44
+  
+  // Initial viewBox shows the full content with a small margin
+  const MARGIN = 100;
+  const INITIAL_VIEW_X = CONTENT_MIN_X - MARGIN;
+  const INITIAL_VIEW_Y = CONTENT_MIN_Y - MARGIN;
+  const INITIAL_VIEW_W = CONTENT_WIDTH + (MARGIN * 2);
+  const INITIAL_VIEW_H = CONTENT_HEIGHT + (MARGIN * 2);
+  
+  const [viewBox, setViewBox] = useState<[number, number, number, number]>([INITIAL_VIEW_X, INITIAL_VIEW_Y, INITIAL_VIEW_W, INITIAL_VIEW_H]);
   const [drag, setDrag] = useState<{ x: number; y: number } | null>(null);
 
   // Reset zoom function
   const resetZoom = () => {
-    setViewBox([0, 0, 8192, 8192]);
+    setViewBox([INITIAL_VIEW_X, INITIAL_VIEW_Y, INITIAL_VIEW_W, INITIAL_VIEW_H]);
   };
 
   // Expose reset function to parent
@@ -111,12 +127,12 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         const newX = x - dx;
         const newY = y - dy;
         
-        // Apply some loose bounds to prevent panning too far
-        const maxOffset = Math.max(w, h) * 0.5; // Allow panning half a view beyond edges
-        const minX = -maxOffset;
-        const minY = -maxOffset;
-        const maxX = 8192 + maxOffset - w;
-        const maxY = 8192 + maxOffset - h;
+        // Apply bounds based on actual content area, with small margin for panning
+        const panMargin = 200; // Allow panning slightly beyond content
+        const minX = CONTENT_MIN_X - panMargin;
+        const minY = CONTENT_MIN_Y - panMargin;
+        const maxX = CONTENT_MAX_X + panMargin - w;
+        const maxY = CONTENT_MAX_Y + panMargin - h;
         
         return [
           Math.max(minX, Math.min(maxX, newX)),
@@ -170,12 +186,12 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         let newX = worldX - (mouseX / rect.width) * newW;
         let newY = worldY - (mouseY / rect.height) * newH;
         
-        // Apply the same loose bounds used for panning to prevent drift
-        const maxOffset = Math.max(newW, newH) * 0.5;
-        const minX = -maxOffset;
-        const minY = -maxOffset;
-        const maxX = 8192 + maxOffset - newW;
-        const maxY = 8192 + maxOffset - newH;
+        // Apply the same bounds used for panning based on actual content
+        const panMargin = 200;
+        const minX = CONTENT_MIN_X - panMargin;
+        const minY = CONTENT_MIN_Y - panMargin;
+        const maxX = CONTENT_MAX_X + panMargin - newW;
+        const maxY = CONTENT_MAX_Y + panMargin - newH;
         newX = Math.min(Math.max(newX, minX), maxX);
         newY = Math.min(Math.max(newY, minY), maxY);
         
@@ -212,11 +228,11 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
         const newY = y - dy;
         
         // Apply same bounds as mouse move
-        const maxOffset = Math.max(w, h) * 0.5;
-        const minX = -maxOffset;
-        const minY = -maxOffset;
-        const maxX = 8192 + maxOffset - w;
-        const maxY = 8192 + maxOffset - h;
+        const panMargin = 200;
+        const minX = CONTENT_MIN_X - panMargin;
+        const minY = CONTENT_MIN_Y - panMargin;
+        const maxX = CONTENT_MAX_X + panMargin - w;
+        const maxY = CONTENT_MAX_Y + panMargin - h;
         
         return [
           Math.max(minX, Math.min(maxX, newX)),
