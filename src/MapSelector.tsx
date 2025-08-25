@@ -355,9 +355,14 @@ const MapSelector: React.FC = () => {
   const copySelectionData = async () => {
     const selectionData = {
       tiles: tileColors,
+  gates: gateColors,
+  shrines: shrineColors,
       labels: colorLabels,
       timestamp: new Date().toISOString(),
-      totalTiles: Object.keys(tileColors).length
+  totalTiles: Object.keys(tileColors).length,
+  totalGates: Object.keys(gateColors).length,
+  totalShrines: Object.keys(shrineColors).length,
+  version: '1.1'
     };
     
     try {
@@ -403,8 +408,33 @@ const MapSelector: React.FC = () => {
               });
               setColorLabels(validLabels);
             }
+
+            // Import gates if they exist
+            if (data.gates && typeof data.gates === 'object') {
+              const validGates: { [id: string]: string } = {};
+              Object.entries<string>(data.gates).forEach(([id, color]) => {
+                if (typeof id === 'string' && typeof color === 'string' && COLORS.includes(color)) {
+                  validGates[id] = color;
+                }
+              });
+              setGateColors(validGates);
+            }
+
+            // Import shrines if they exist
+            if (data.shrines && typeof data.shrines === 'object') {
+              const validShrines: { [id: string]: string } = {};
+              Object.entries<string>(data.shrines).forEach(([id, color]) => {
+                if (typeof id === 'string' && typeof color === 'string' && COLORS.includes(color)) {
+                  validShrines[id] = color;
+                }
+              });
+              setShrineColors(validShrines);
+            }
             
-            alert(`Successfully imported ${Object.keys(validTiles).length} tile selections!`);
+            const tilesCount = Object.keys(validTiles).length;
+            const gatesCount = data.gates ? Object.keys(data.gates).length : 0;
+            const shrinesCount = data.shrines ? Object.keys(data.shrines).length : 0;
+            alert(`Imported: tiles ${tilesCount}${data.gates ? `, gates ${gatesCount}` : ''}${data.shrines ? `, shrines ${shrinesCount}` : ''}.`);
           } else {
             alert('Invalid file format. Please select a valid selection data file.');
           }
@@ -445,8 +475,33 @@ const MapSelector: React.FC = () => {
           });
           setColorLabels(validLabels);
         }
+
+        // Import gates if they exist
+        if (data.gates && typeof data.gates === 'object') {
+          const validGates: { [id: string]: string } = {};
+          Object.entries<string>(data.gates).forEach(([id, color]) => {
+            if (typeof id === 'string' && typeof color === 'string' && COLORS.includes(color)) {
+              validGates[id] = color;
+            }
+          });
+          setGateColors(validGates);
+        }
+
+        // Import shrines if they exist
+        if (data.shrines && typeof data.shrines === 'object') {
+          const validShrines: { [id: string]: string } = {};
+          Object.entries<string>(data.shrines).forEach(([id, color]) => {
+            if (typeof id === 'string' && typeof color === 'string' && COLORS.includes(color)) {
+              validShrines[id] = color;
+            }
+          });
+          setShrineColors(validShrines);
+        }
         
-        alert(`Successfully imported ${Object.keys(validTiles).length} tile selections from clipboard!`);
+        const tilesCount = Object.keys(validTiles).length;
+        const gatesCount = data.gates ? Object.keys(data.gates).length : 0;
+        const shrinesCount = data.shrines ? Object.keys(data.shrines).length : 0;
+        alert(`Imported from clipboard: tiles ${tilesCount}${data.gates ? `, gates ${gatesCount}` : ''}${data.shrines ? `, shrines ${shrinesCount}` : ''}.`);
       } else {
         alert('Invalid clipboard data. Please copy valid selection data first.');
       }
@@ -460,10 +515,14 @@ const MapSelector: React.FC = () => {
   const saveSelectionData = () => {
     const selectionData = {
       tiles: tileColors,
+  gates: gateColors,
+  shrines: shrineColors,
       labels: colorLabels,
       timestamp: new Date().toISOString(),
       totalTiles: Object.keys(tileColors).length,
-      version: '1.0'
+  totalGates: Object.keys(gateColors).length,
+  totalShrines: Object.keys(shrineColors).length,
+  version: '1.1'
     };
     
     const blob = new Blob([JSON.stringify(selectionData, null, 2)], { type: 'application/json' });
