@@ -307,15 +307,19 @@ const MapSelector: React.FC = () => {
   // States for gates and shrines
   const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
   const [shrineColors, setShrineColors] = useState<{ [id: string]: string }>({});
+
+  // Max selections allowed per color/label across tiles, gates, and shrines
+  const MAX_PER_COLOR = 50;
   
   // Ref to store the reset zoom function
   const resetZoomRef = useRef<(() => void) | null>(null);
 
-  // Calculate color counts
+  // Calculate color counts (tiles + gates + shrines)
   const colorCounts = COLORS.reduce((acc, color) => {
     const tileCount = Object.values(tileColors).filter(tileColor => tileColor === color).length;
     const gateCount = Object.values(gateColors).filter(gateColor => gateColor === color).length;
-    acc[color] = tileCount + gateCount;
+    const shrineCount = Object.values(shrineColors).filter(shrineColor => shrineColor === color).length;
+    acc[color] = tileCount + gateCount + shrineCount;
     return acc;
   }, {} as { [color: string]: number });
 
@@ -559,6 +563,15 @@ const MapSelector: React.FC = () => {
         delete copy[id];
         return copy;
       }
+      // Enforce max per color across tiles + gates + shrines
+      const currentTileCount = Object.values(prev).filter((c) => c === selectedColor).length;
+      const currentGateCount = Object.values(gateColors).filter((c) => c === selectedColor).length;
+      const currentShrineCount = Object.values(shrineColors).filter((c) => c === selectedColor).length;
+      const totalForColor = currentTileCount + currentGateCount + currentShrineCount;
+      if (totalForColor >= MAX_PER_COLOR) {
+        alert(`Max ${MAX_PER_COLOR} selections reached for this color/label.`);
+        return prev;
+      }
       // Otherwise, set to selectedColor
       return { ...prev, [id]: selectedColor };
     });
@@ -573,6 +586,15 @@ const MapSelector: React.FC = () => {
         delete copy[id];
         return copy;
       }
+      // Enforce max per color across tiles + gates + shrines
+      const currentTileCount = Object.values(tileColors).filter((c) => c === selectedColor).length;
+      const currentGateCount = Object.values(prev).filter((c) => c === selectedColor).length;
+      const currentShrineCount = Object.values(shrineColors).filter((c) => c === selectedColor).length;
+      const totalForColor = currentTileCount + currentGateCount + currentShrineCount;
+      if (totalForColor >= MAX_PER_COLOR) {
+        alert(`Max ${MAX_PER_COLOR} selections reached for this color/label.`);
+        return prev;
+      }
       // Otherwise, set to selectedColor
       return { ...prev, [id]: selectedColor };
     });
@@ -586,6 +608,15 @@ const MapSelector: React.FC = () => {
         const copy = { ...prev };
         delete copy[id];
         return copy;
+      }
+      // Enforce max per color across tiles + gates + shrines
+      const currentTileCount = Object.values(tileColors).filter((c) => c === selectedColor).length;
+      const currentGateCount = Object.values(gateColors).filter((c) => c === selectedColor).length;
+      const currentShrineCount = Object.values(prev).filter((c) => c === selectedColor).length;
+      const totalForColor = currentTileCount + currentGateCount + currentShrineCount;
+      if (totalForColor >= MAX_PER_COLOR) {
+        alert(`Max ${MAX_PER_COLOR} selections reached for this color/label.`);
+        return prev;
       }
       // Otherwise, set to selectedColor
       return { ...prev, [id]: selectedColor };
