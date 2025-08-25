@@ -313,7 +313,9 @@ const MapSelector: React.FC = () => {
 
   // Calculate color counts
   const colorCounts = COLORS.reduce((acc, color) => {
-    acc[color] = Object.values(tileColors).filter(tileColor => tileColor === color).length;
+    const tileCount = Object.values(tileColors).filter(tileColor => tileColor === color).length;
+    const gateCount = Object.values(gateColors).filter(gateColor => gateColor === color).length;
+    acc[color] = tileCount + gateCount;
     return acc;
   }, {} as { [color: string]: number });
 
