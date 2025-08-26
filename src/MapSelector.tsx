@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import html2canvas from "html2canvas";
 import SvgMap from "./SvgMap";
+import { getSanctuaryPointsForColor, Sanctuaries } from './game/sanctuaries';
 
 // --- Zoomable/Pannable SVG Map Wrapper ---
 interface ZoomablePanSvgMapProps extends React.ComponentProps<typeof SvgMap> {
@@ -254,18 +255,29 @@ const ZoomablePanSvgMap: React.FC<ZoomablePanSvgMapProps> = (props) => {
       <div style={{
         position: 'absolute',
         top: 8,
-        right: 8,
-        background: 'rgba(0, 0, 0, 0.7)',
-        color: 'white',
-        padding: '6px 10px',
-        borderRadius: 4,
-        fontSize: '11px',
+  right: 12,
+        background: 'rgba(0, 0, 0, 0.75)',
+        color: '#fff',
+        padding: '10px 12px',
+        borderRadius: 8,
+        fontSize: 12,
         zIndex: 10,
         pointerEvents: 'none',
-        lineHeight: '1.3',
-        maxWidth: '200px'
+        lineHeight: 1.5,
+        width: 260,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.35)'
       }}>
-        <div><strong>Controls:</strong></div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, marginBottom: 6, fontSize: 13 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" role="presentation" style={{ flex: '0 0 auto' }}>
+            <line x1="8" y1="2" x2="8" y2="14" stroke="#fff" strokeWidth="1.5" />
+            <polygon points="8,1 6.5,3 9.5,3" fill="#fff" />
+            <polygon points="8,15 6.5,13 9.5,13" fill="#fff" />
+            <line x1="2" y1="8" x2="14" y2="8" stroke="#fff" strokeWidth="1.5" />
+            <polygon points="1,8 3,6.5 3,9.5" fill="#fff" />
+            <polygon points="15,8 13,6.5 13,9.5" fill="#fff" />
+          </svg>
+          <span>Controls</span>
+        </div>
         <div>Scroll: zoom</div>
         <div>Drag: pan</div>
         <div>Arrow keys: pan</div>
@@ -327,8 +339,10 @@ const MapSelector: React.FC = () => {
     'gate1','gate2','gate3','gate4','gate5','gate6','gate7','gate8',
     'gate9','gate10','gate11','gate12','gate13','gate14','gate15','gate16'
   ]), []);
-  const SANCTUARY_NORTH_ID = 'shrine13';
-  const SANCTUARY_SOUTH_ID = 'shrine15';
+  // Sanctuary territories are now defined by owning specific tiles (see ./game/sanctuaries)
+  const SANCTUARY_TILE_IDS = React.useMemo(() => new Set<number>(
+    Sanctuaries.REGIONS.flatMap(r => r.tileIds)
+  ), []);
   // TEMPLE_TILE_ID is fixed as above
   
   // Ref to store the reset zoom function
@@ -351,7 +365,8 @@ const MapSelector: React.FC = () => {
       let centerTileCount = 0;
       for (const [idStr, c] of Object.entries(tileColors)) {
         const id = Number(idStr);
-        if (c === color && CENTER_TILE_IDS.has(id)) centerTileCount++;
+        // Exclude sanctuary tiles from base center-tile scoring to avoid double-counting
+        if (c === color && CENTER_TILE_IDS.has(id) && !SANCTUARY_TILE_IDS.has(id)) centerTileCount++;
       }
 
       // Center gates
@@ -360,18 +375,17 @@ const MapSelector: React.FC = () => {
         if (c === color && CENTER_GATE_IDS.has(id)) centerGateCount++;
       }
 
-      // Sanctuaries north/south of center
-      const northSanctuaryPts = shrineColors[SANCTUARY_NORTH_ID] === color ? 1500 : 0;
-      const southSanctuaryPts = shrineColors[SANCTUARY_SOUTH_ID] === color ? 1500 : 0;
+  // Sanctuaries (north/south) scored by tile ownership
+  const sanctuaryPts = getSanctuaryPointsForColor(tileColors, color);
 
       // Temple in the very center
     const templePts = tileColors[TEMPLE_TILE_ID] === color ? 10000 : 0;
 
-      const score = centerTileCount * 300 + centerGateCount * 1500 + northSanctuaryPts + southSanctuaryPts + templePts;
+      const score = centerTileCount * 300 + centerGateCount * 1500 + sanctuaryPts + templePts;
       scores[color] = score;
     }
     return scores;
-  }, [COLORS, tileColors, gateColors, shrineColors, CENTER_TILE_IDS, CENTER_GATE_IDS]);
+  }, [COLORS, tileColors, gateColors, shrineColors, CENTER_TILE_IDS, CENTER_GATE_IDS, SANCTUARY_TILE_IDS]);
 
   // Reset all selections
   const resetSelections = () => {
@@ -994,6 +1008,42 @@ const MapSelector: React.FC = () => {
         </div>
       </div>
       
+      {/* Scoring Legend (right side) */}
+    <div
+        aria-label="Scoring Legend"
+        style={{
+          position: 'fixed',
+          top: 230,
+          right: 12,
+          width: 260,
+          background: 'rgba(0, 0, 0, 0.75)',
+          color: '#fff',
+          padding: '10px 12px',
+          borderRadius: 8,
+          zIndex: 5,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.35)'
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 700, marginBottom: 6, fontSize: 13 }}>
+          <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true" role="presentation" style={{ flex: '0 0 auto' }}>
+            <circle cx="8" cy="5" r="3" fill="none" stroke="#fff" strokeWidth="1.5" />
+            <polygon points="6,8 5,14 7.5,12" fill="#fff" opacity="0.9" />
+            <polygon points="10,8 8.5,12 11,14" fill="#fff" opacity="0.9" />
+          </svg>
+          <span>Scoring Legend</span>
+        </div>
+        <ul style={{ listStyle: 'none', padding: 0, margin: 0, lineHeight: 1.5, fontSize: 12 }}>
+          <li><strong>+300</strong> per center territory tile</li>
+          <li><strong>+1,500</strong> per center gate</li>
+          <li><strong>+1,500</strong> North Sanctuary (tile 1)</li>
+          <li><strong>+1,500</strong> South Sanctuary (tile 41)</li>
+          <li><strong>+10,000</strong> Temple (tile 38)</li>
+        </ul>
+        <div style={{ marginTop: 6, fontSize: 11, opacity: 0.8 }}>
+          Sanctuary points go to the color that owns the listed tiles. Sanctuary tiles are excluded from the base +300 center-tile score.
+        </div>
+      </div>
+
       {/* Credits Banner */}
       <div style={{
         position: 'fixed',
