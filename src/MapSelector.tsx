@@ -307,9 +307,29 @@ const MapSelector: React.FC = () => {
   // States for gates and shrines
   const [gateColors, setGateColors] = useState<{ [id: string]: string }>({});
   const [shrineColors, setShrineColors] = useState<{ [id: string]: string }>({});
+  // Temple configuration is a fixed constant (provided by data): tile id 38
+  const TEMPLE_TILE_ID = 38;
 
   // Max selections allowed per color/label across tiles, gates, and shrines
   const MAX_PER_COLOR = 50;
+
+  // ----- Center section scoring config -----
+  // Assumptions: Center area tiles roughly IDs 1..36 from SvgMap, center gates gate1..gate16
+  // Sanctuaries just north/south of center: shrine13 (north), shrine15 (south)
+  // Temple tile at the very center: tile ID 30
+  const CENTER_TILE_IDS = React.useMemo(() => new Set<number>([
+    1,2,3,4,5,6,7,8,9,10,
+    11,12,13,14,15,16,17,18,19,20,
+    21,22,23,24,25,26,27,28,29,30,
+    31,32,33,34,35,36
+  ]), []);
+  const CENTER_GATE_IDS = React.useMemo(() => new Set<string>([
+    'gate1','gate2','gate3','gate4','gate5','gate6','gate7','gate8',
+    'gate9','gate10','gate11','gate12','gate13','gate14','gate15','gate16'
+  ]), []);
+  const SANCTUARY_NORTH_ID = 'shrine13';
+  const SANCTUARY_SOUTH_ID = 'shrine15';
+  // TEMPLE_TILE_ID is fixed as above
   
   // Ref to store the reset zoom function
   const resetZoomRef = useRef<(() => void) | null>(null);
@@ -322,6 +342,36 @@ const MapSelector: React.FC = () => {
     acc[color] = tileCount + gateCount + shrineCount;
     return acc;
   }, {} as { [color: string]: number });
+
+  // Calculate per-color Center scoring (structures only within center section)
+  const centerScores = React.useMemo(() => {
+    const scores: { [color: string]: number } = {};
+    for (const color of COLORS) {
+      // Center territories (tiles)
+      let centerTileCount = 0;
+      for (const [idStr, c] of Object.entries(tileColors)) {
+        const id = Number(idStr);
+        if (c === color && CENTER_TILE_IDS.has(id)) centerTileCount++;
+      }
+
+      // Center gates
+      let centerGateCount = 0;
+      for (const [id, c] of Object.entries(gateColors)) {
+        if (c === color && CENTER_GATE_IDS.has(id)) centerGateCount++;
+      }
+
+      // Sanctuaries north/south of center
+      const northSanctuaryPts = shrineColors[SANCTUARY_NORTH_ID] === color ? 1500 : 0;
+      const southSanctuaryPts = shrineColors[SANCTUARY_SOUTH_ID] === color ? 1500 : 0;
+
+      // Temple in the very center
+    const templePts = tileColors[TEMPLE_TILE_ID] === color ? 10000 : 0;
+
+      const score = centerTileCount * 300 + centerGateCount * 1500 + northSanctuaryPts + southSanctuaryPts + templePts;
+      scores[color] = score;
+    }
+    return scores;
+  }, [COLORS, tileColors, gateColors, shrineColors, CENTER_TILE_IDS, CENTER_GATE_IDS]);
 
   // Reset all selections
   const resetSelections = () => {
@@ -361,12 +411,13 @@ const MapSelector: React.FC = () => {
       tiles: tileColors,
   gates: gateColors,
   shrines: shrineColors,
+  templeTileId: TEMPLE_TILE_ID,
       labels: colorLabels,
       timestamp: new Date().toISOString(),
   totalTiles: Object.keys(tileColors).length,
   totalGates: Object.keys(gateColors).length,
   totalShrines: Object.keys(shrineColors).length,
-  version: '1.1'
+  version: '1.2'
     };
     
     try {
@@ -434,6 +485,8 @@ const MapSelector: React.FC = () => {
               });
               setShrineColors(validShrines);
             }
+
+            // Temple tile id is fixed; ignore any provided value
             
             const tilesCount = Object.keys(validTiles).length;
             const gatesCount = data.gates ? Object.keys(data.gates).length : 0;
@@ -501,6 +554,8 @@ const MapSelector: React.FC = () => {
           });
           setShrineColors(validShrines);
         }
+
+  // Temple tile id is fixed; ignore any provided value
         
         const tilesCount = Object.keys(validTiles).length;
         const gatesCount = data.gates ? Object.keys(data.gates).length : 0;
@@ -521,12 +576,13 @@ const MapSelector: React.FC = () => {
       tiles: tileColors,
   gates: gateColors,
   shrines: shrineColors,
+  templeTileId: TEMPLE_TILE_ID,
       labels: colorLabels,
       timestamp: new Date().toISOString(),
       totalTiles: Object.keys(tileColors).length,
   totalGates: Object.keys(gateColors).length,
   totalShrines: Object.keys(shrineColors).length,
-  version: '1.1'
+  version: '1.2'
     };
     
     const blob = new Blob([JSON.stringify(selectionData, null, 2)], { type: 'application/json' });
@@ -728,6 +784,25 @@ const MapSelector: React.FC = () => {
                       textAlign: 'center'
                     }}>
                       {colorCounts[color]}
+                    </span>
+                  )}
+
+                  {/* Center section score */}
+                  {centerScores[color] > 0 && (
+                    <span
+                      title="Center score"
+                      style={{
+                        fontSize: '11px',
+                        color: '#ffd54f',
+                        fontWeight: 'bold',
+                        background: 'rgba(0,0,0,0.6)',
+                        padding: '1px 4px',
+                        borderRadius: '8px',
+                        minWidth: '16px',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {centerScores[color].toLocaleString()}
                     </span>
                   )}
                 </div>
