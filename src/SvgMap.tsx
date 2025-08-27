@@ -4167,7 +4167,7 @@ const SvgMap: React.FC<SvgMapProps> = ({
   onGateClick,
   selectedShrines = [],
   shrineColors = {},
-  onShrineClick
+  onShrineClick: _onShrineClick
 }) => {
   const getTileLabel = (id: number) => {
     const tileColor = tileColors[id];
@@ -4189,6 +4189,8 @@ const SvgMap: React.FC<SvgMapProps> = ({
         const fill = tileColors[tile.id] || tile.defaultFill;
         // Optionally, highlight with a border if selected
         const isSelected = selectedTiles.includes(tile.id);
+        // Heuristic: detect small decorative dot shapes (non-interactive)
+        const isDecorativeDot = typeof tile.d === 'string' && tile.d.includes('11.21,14.23-.96,38.51-13.44,48.79');
         const label = getTileLabel(tile.id);
         
         return (
@@ -4196,10 +4198,14 @@ const SvgMap: React.FC<SvgMapProps> = ({
             <path
               d={tile.d}
               fill={fill}
-              stroke={isSelected ? '#fff' : '#333'}
-              strokeWidth={isSelected ? 3 : 2}
-              style={{ cursor: 'pointer', transition: 'stroke 0.2s, stroke-width 0.2s' }}
-              onClick={() => onTileClick(tile.id)}
+              stroke={isDecorativeDot ? 'none' : (isSelected ? '#fff' : '#333')}
+              strokeWidth={isDecorativeDot ? 0 : (isSelected ? 3 : 2)}
+              style={{
+                cursor: isDecorativeDot ? 'default' : 'pointer',
+                pointerEvents: isDecorativeDot ? 'none' : 'auto',
+                transition: 'stroke 0.2s, stroke-width 0.2s'
+              }}
+              onClick={isDecorativeDot ? undefined : () => onTileClick(tile.id)}
             />
             {label && (
               <text
@@ -4266,15 +4272,14 @@ const SvgMap: React.FC<SvgMapProps> = ({
         const isSelected = selectedShrines.includes(shrine.id);
         
         return (
-          <g key={shrine.id}>
+          <g key={shrine.id} style={{ pointerEvents: 'none' }}>
             <path
               d={shrine.d}
               fill={fill}
-              stroke={isSelected ? '#333' : '#000'}
-              strokeWidth={isSelected ? '3' : '1'}
-              opacity={0.8}
-              style={{ cursor: onShrineClick ? 'pointer' : 'default' }}
-              onClick={() => onShrineClick && onShrineClick(shrine.id)}
+        stroke={isSelected ? '#333' : '#000'}
+        strokeWidth={isSelected ? '3' : '1'}
+        opacity={0.8}
+              style={{ cursor: 'default' }}
             />
             {/* Optional shrine label */}
             <text
@@ -4285,7 +4290,7 @@ const SvgMap: React.FC<SvgMapProps> = ({
               fill="#ffffff"
               fontSize="12"
               fontWeight="bold"
-              style={{ pointerEvents: 'none' }}
+        style={{ pointerEvents: 'none' }}
             >
               S
             </text>
